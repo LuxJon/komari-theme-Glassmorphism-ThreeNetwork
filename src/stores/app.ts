@@ -789,6 +789,25 @@ function readNumberSetting(settings: ThemeSettings, key: string, fallback: numbe
   return Math.min(Math.max(value, min), max)
 }
 
+type PingTaskSelection = number | string | null
+
+function readOptionalPingTaskSelection(settings: ThemeSettings, key: string): PingTaskSelection {
+  const value = settings[key]
+  const numericValue = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value)
+      : Number.NaN
+
+  if (Number.isInteger(numericValue) && numericValue > 0)
+    return numericValue
+  if (typeof value !== 'string')
+    return null
+
+  const taskName = value.trim()
+  return taskName && taskName !== '自动选择' ? taskName : null
+}
+
 function readStringSetting(settings: ThemeSettings, key: string, fallback = ''): string {
   const value = settings[key]
   return typeof value === 'string' ? value.trim() : fallback
@@ -959,6 +978,12 @@ const useAppStore = defineStore('app', () => {
       return settings.nodeCardSize
     return 'compact'
   })
+
+  const threeNetworkPingTaskSelections = computed<readonly PingTaskSelection[]>(() => [
+    readOptionalPingTaskSelection(themeSettings.value, 'threeNetworkPingTask1'),
+    readOptionalPingTaskSelection(themeSettings.value, 'threeNetworkPingTask2'),
+    readOptionalPingTaskSelection(themeSettings.value, 'threeNetworkPingTask3'),
+  ])
 
   // 当前实际使用的视图模式
   const nodeViewMode = computed<NodeViewMode>({
@@ -1307,6 +1332,7 @@ const useAppStore = defineStore('app', () => {
     nodeViewMode,
     defaultViewMode,
     nodeCardSize,
+    threeNetworkPingTaskSelections,
     rpcTransportMode,
     byteDecimals,
     alertEnabled,

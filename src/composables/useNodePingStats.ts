@@ -1,10 +1,10 @@
 import type { MaybeRefOrGetter } from 'vue'
-import type { PingMetricTaskStats } from '@/utils/rpc'
+import type { PingMetricTaskStats, PingTaskInfo } from '@/utils/rpc'
 import { useThrottleFn } from '@vueuse/core'
 import { computed, onScopeDispose, ref, shallowRef, toValue, watch } from 'vue'
 import { PING_RECORD_MAX_COUNT } from '@/constants/load'
-import { abortPingRecords, loadPingRecords } from '@/services/history.service'
-import { abortPingMetricStats, abortQueryMetrics, loadPingMetricStats, queryMetrics } from '@/services/metrics.service'
+import { abortPingRecordsWithTasks, loadPingRecordsWithTasks } from '@/services/history.service'
+import { abortPingMetricStats, abortQueryMetrics, loadPingMetricStats, loadPublicPingTasks, queryMetrics } from '@/services/metrics.service'
 import { isPingMetric, normalizeMetricSeriesList, PING_LATENCY_METRIC, PING_LOSS_METRIC, pingTaskId } from '@/utils/metricSeries'
 
 export interface NodePingHistoryPoint {
@@ -21,6 +21,12 @@ export interface NodePingStatsState {
   hasData: boolean
 }
 
+export interface NodePingTaskStatsState extends NodePingStatsState {
+  taskId: number
+  taskName: string
+  latestLatency: number | null
+}
+
 interface PingRecord {
   client: string
   task_id: number
@@ -29,6 +35,7 @@ interface PingRecord {
 }
 
 interface MetricLossPoint {
+  taskId: number
   time: string
   value: number
   count: number
@@ -45,6 +52,7 @@ interface SharedPingRecordsState {
   source: 'metric' | 'legacy'
   metricStats?: PingMetricTaskStats[]
   metricLossPoints?: MetricLossPoint[]
+  tasks?: PingTaskInfo[]
 }
 
 interface SharedPingRecordsEntry {
@@ -271,7 +279,7 @@ function buildMetricRecordsByClient(nodeUuid: string, stats: PingMetricTaskStats
 }
 
 async function loadPingMetricRecords(nodeUuid: string, hours: number, maxCount?: number): Promise<SharedPingRecordsState | null> {
-  const [statsResult, metricsResult] = await Promise.allSettled([
+  const [statsResult, metricsResult, tasksResult] = await Promise.allSettled([
     loadPingMetricStats({ entity_id: nodeUuid, hours, max_points: maxCount }),
     queryMetrics({
       metric_keys: [PING_LATENCY_METRIC, PING_LOSS_METRIC],
@@ -282,6 +290,7 @@ async function loadPingMetricRecords(nodeUuid: string, hours: number, maxCount?:
       max_points: maxCount,
       aggregation: 'avg',
     }),
+    loadPublicPingTasks(),
   ])
 
   const stats = statsResult.status === 'fulfilled'
@@ -304,6 +313,7 @@ async function loadPingMetricRecords(nodeUuid: string, hours: number, maxCount?:
             continue
 
           metricLossPoints.push({
+            taskId,
             time: point.time,
             value: point.value,
             count: isFiniteNumber(point.count) && point.count > 0 ? point.count : 1,
@@ -346,6 +356,7 @@ async function loadPingMetricRecords(nodeUuid: string, hours: number, maxCount?:
     source: 'metric',
     metricStats: stats,
     metricLossPoints,
+    tasks: tasksResult.status === 'fulfilled' ? tasksResult.value : [],
   }
 }
 
@@ -366,10 +377,11 @@ async function loadSharedPingRecords(entry: SharedPingRecordsEntry, hours: numbe
         entry.data.value = metricState
       }
       else {
-        const records = await loadPingRecords(hours, maxCount, nodeUuid)
+        const { records, tasks } = await loadPingRecordsWithTasks(hours, maxCount, nodeUuid)
         entry.data.value = {
           recordsByClient: buildRecordsByClient(records),
           source: 'legacy',
+          tasks,
         }
       }
       entry.lastFetchedAt = Date.now()
@@ -405,7 +417,7 @@ function stopSharedPingRecordsRefresh(entry: SharedPingRecordsEntry): void {
 }
 
 function abortSharedPingRecordsRequests(hours: number, maxCount?: number, uuid?: string): void {
-  abortPingRecords(hours, maxCount, uuid)
+  abortPingRecordsWithTasks(hours, maxCount, uuid)
   if (!uuid)
     return
 
@@ -632,12 +644,119 @@ function buildStats(records: PingRecord[], metricStats?: PingMetricTaskStats[], 
   }
 }
 
+function buildTaskStats(
+  records: PingRecord[],
+  metricStats: PingMetricTaskStats[] | undefined,
+  metricLossPoints: MetricLossPoint[] | undefined,
+  tasks: PingTaskInfo[] | undefined,
+): NodePingTaskStatsState[] {
+  const orderedTaskIds: number[] = []
+  const taskNames = new Map<number, string>()
+  const knownTaskIds = new Set<number>()
+
+  const includeTask = (taskId: number, taskName?: string): void => {
+    if (!Number.isFinite(taskId))
+      return
+    if (!orderedTaskIds.includes(taskId))
+      orderedTaskIds.push(taskId)
+    if (taskName?.trim())
+      taskNames.set(taskId, taskName.trim())
+  }
+
+  for (const task of tasks ?? []) {
+    knownTaskIds.add(task.id)
+    includeTask(task.id, task.name)
+  }
+  for (const stat of metricStats ?? [])
+    includeTask(normalizeTaskId(stat.task_id), stat.name)
+  for (const record of records)
+    includeTask(record.task_id)
+
+  return orderedTaskIds.flatMap((taskId) => {
+    const taskRecords = records.filter(record => record.task_id === taskId)
+    const taskMetricStats = (metricStats ?? []).filter(stat => normalizeTaskId(stat.task_id) === taskId)
+    const taskLossPoints = (metricLossPoints ?? []).filter(point => point.taskId === taskId)
+    const stats = buildStats(taskRecords, taskMetricStats, taskLossPoints)
+    if (!stats.hasData && !knownTaskIds.has(taskId))
+      return []
+
+    const metricLatest = taskMetricStats
+      .map(stat => stat.latest)
+      .find(isFiniteNumber)
+    const latestRecord = [...taskRecords]
+      .sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime())
+      .at(0)
+    const recordLatest = latestRecord && latestRecord.value >= 0 ? latestRecord.value : null
+
+    return [{
+      ...stats,
+      taskId,
+      taskName: taskNames.get(taskId) ?? `任务 #${taskId}`,
+      latestLatency: metricLatest ?? recordLatest ?? null,
+    }]
+  })
+}
+
+const THREE_NETWORK_NAME_PATTERNS = [
+  /电信|telecom|chinanet/i,
+  /联通|unicom/i,
+  /移动|mobile|cmcc/i,
+] as const
+
+export function selectThreeNetworkPingTasks(
+  tasks: NodePingTaskStatsState[],
+  preferredTasks: readonly (number | string | null)[] = [],
+): NodePingTaskStatsState[] {
+  if (tasks.length < THREE_NETWORK_NAME_PATTERNS.length)
+    return []
+
+  const selected: Array<NodePingTaskStatsState | undefined> = Array.from({ length: THREE_NETWORK_NAME_PATTERNS.length })
+  const selectedIds = new Set<number>()
+
+  preferredTasks.slice(0, THREE_NETWORK_NAME_PATTERNS.length).forEach((selection, index) => {
+    if (selection === null)
+      return
+    const task = typeof selection === 'number'
+      ? tasks.find(candidate => candidate.taskId === selection)
+      : tasks.find(candidate => candidate.taskName === selection)
+    if (!task)
+      return
+    if (selectedIds.has(task.taskId))
+      return
+    selected[index] = task
+    selectedIds.add(task.taskId)
+  })
+
+  THREE_NETWORK_NAME_PATTERNS.forEach((pattern, index) => {
+    if (selected[index])
+      return
+    const task = tasks.find(candidate => !selectedIds.has(candidate.taskId) && pattern.test(candidate.taskName))
+    if (!task)
+      return
+    selected[index] = task
+    selectedIds.add(task.taskId)
+  })
+
+  for (let index = 0; index < selected.length; index++) {
+    if (selected[index])
+      continue
+    const task = tasks.find(candidate => !selectedIds.has(candidate.taskId))
+    if (!task)
+      return []
+    selected[index] = task
+    selectedIds.add(task.taskId)
+  }
+
+  return selected.filter((task): task is NodePingTaskStatsState => Boolean(task))
+}
+
 export function useNodePingStats(
   uuid: MaybeRefOrGetter<string>,
   options?: {
     hours?: MaybeRefOrGetter<number>
     enabled?: MaybeRefOrGetter<boolean>
     maxCount?: MaybeRefOrGetter<number | undefined>
+    selectedTasks?: MaybeRefOrGetter<readonly (number | string | null)[]>
   },
 ) {
   const loading = ref(false)
@@ -695,6 +814,23 @@ export function useNodePingStats(
     return records.length || state.metricStats?.length
       ? buildStats(records, state.metricStats, state.metricLossPoints)
       : createEmptyStats()
+  })
+
+  const taskStats = computed<NodePingTaskStatsState[]>(() => {
+    const { uuid: nodeUuid, hours, maxCount, enabled } = resolved.value
+    if (!enabled || !nodeUuid.trim())
+      return []
+
+    const state = getSharedPingRecordsEntry(hours, maxCount, nodeUuid).data.value
+    if (!state)
+      return []
+
+    return buildTaskStats(
+      state.recordsByClient.get(nodeUuid) ?? [],
+      state.metricStats,
+      state.metricLossPoints,
+      state.tasks,
+    )
   })
 
   // 副作用：按需触发首次共享加载并维护 loading/error，不再命令式写入 stats。
@@ -767,6 +903,8 @@ export function useNodePingStats(
     loading,
     error,
     history: computed(() => stats.value.history),
+    taskStats,
+    threeNetworkStats: computed(() => selectThreeNetworkPingTasks(taskStats.value, toValue(options?.selectedTasks) ?? [])),
     avgLatency: computed(() => stats.value.avgLatency),
     avgLoss: computed(() => stats.value.avgLoss),
     avgVolatility: computed(() => stats.value.avgVolatility),

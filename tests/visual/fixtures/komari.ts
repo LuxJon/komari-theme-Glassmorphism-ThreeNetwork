@@ -23,6 +23,8 @@ export interface VisualFixtureOptions {
   nodeCardSize?: 'mini' | 'compact' | 'comfortable' | 'large'
   freePriceNode?: boolean
   hideEarth?: boolean
+  threeNetworkPing?: boolean
+  threeNetworkTasks?: readonly [number | string, number | string, number | string]
 }
 
 function uuidFor(index: number): string {
@@ -59,7 +61,9 @@ function buildClients(freePriceNode = false) {
       currency: 'USD',
       expired_at: index === 6 ? '2026-08-02T00:00:00.000Z' : '2027-07-25T00:00:00.000Z',
       group: index < 6 ? '生产' : '测试,边缘',
-      tags: index % 2 === 0 ? 'core<jade>,visual<blue>' : 'edge<orange>',
+      tags: index === 0
+        ? '500Mbps<purple>;CN2/9929/CMIN2<blue>'
+        : index % 2 === 0 ? 'core<jade>;visual<blue>' : 'edge<orange>',
       hidden: false,
       traffic_limit: index === 6 ? 2 * TIB : 20 * TIB,
       traffic_limit_type: 'sum',
@@ -212,11 +216,25 @@ function jsonRpcResult(id: unknown, result: unknown) {
   return { jsonrpc: '2.0', id, result }
 }
 
-async function handleRpc(route: Route, clientFixtures = clients): Promise<void> {
+async function handleRpc(route: Route, clientFixtures = clients, threeNetworkPing = false): Promise<void> {
   const payload = route.request().postDataJSON() as { id: unknown, method: string, params?: Record<string, unknown> }
   const uuid = typeof payload.params?.uuid === 'string' ? payload.params.uuid : uuidFor(0)
-  const pingRecords = Array.from({ length: 48 }, (_, index) => ({ task_id: 1, client: uuid, time: new Date(Date.parse(FIXED_NOW) - (47 - index) * 75_000).toISOString(), value: index % 17 === 0 ? -1 : 76 + index }))
-  const pingTasks = [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+  const pingTasks = threeNetworkPing
+    ? [
+        { id: 1, name: '浙江电信', interval: 60, loss: 4.8, weight: 1 },
+        { id: 2, name: '浙江联通', interval: 60, loss: 2.2, weight: 2 },
+        { id: 3, name: '浙江移动', interval: 60, loss: 1.1, weight: 3 },
+        { id: 4, name: '上海电信', interval: 60, loss: 0.8, weight: 4 },
+        { id: 5, name: '上海联通', interval: 60, loss: 3.4, weight: 5 },
+        { id: 6, name: '上海移动', interval: 60, loss: 9.8, weight: 6 },
+      ]
+    : [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+  const pingRecords = pingTasks.flatMap((task, taskIndex) => Array.from({ length: 48 }, (_, index) => ({
+    task_id: task.id,
+    client: uuid,
+    time: new Date(Date.parse(FIXED_NOW) - (47 - index) * 75_000).toISOString(),
+    value: index % (17 + taskIndex) === 0 ? -1 : [76, 114, 152, 30, 100, 200][taskIndex]! + index,
+  })))
   let result: unknown
 
   switch (payload.method) {
@@ -298,6 +316,9 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     homeQuickControlsEnabled: true,
     homeQuickControlPreset: '完整',
     homeToolsEnabled: true,
+    threeNetworkPingTask1: options.threeNetworkTasks?.[0] ?? '自动选择',
+    threeNetworkPingTask2: options.threeNetworkTasks?.[1] ?? '自动选择',
+    threeNetworkPingTask3: options.threeNetworkTasks?.[2] ?? '自动选择',
   }
 
   await page.addInitScript(({ fixedNow }) => {
@@ -348,7 +369,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     contentType: 'application/json',
     body: JSON.stringify({ status: 'success', message: 'ok', data: { version: '1.2.6-visual', hash: 'visual' } }),
   }))
-  await page.route('**/rpc2', route => handleRpc(route, clientFixtures))
+  await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options.threeNetworkPing))
   await page.route('https://ipwho.is/', route => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ success: true, ip: '2001:db8::25', city: 'Tokyo', region: 'Tokyo', country: 'Japan', connection: { org: 'Example Networks' } }),

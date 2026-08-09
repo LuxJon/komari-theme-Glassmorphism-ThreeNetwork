@@ -18,6 +18,7 @@ export interface RegionCluster {
   label: string
   asn?: string
   org?: string
+  nodeNames: string[]
   servers: number
   onlineServers: number
 }
@@ -129,13 +130,24 @@ export function useNodeGeoClusters(options: UseNodeGeoClustersOptions = {}) {
 
       let cluster = clustersById.get(info.id)
       if (!cluster) {
-        cluster = { id: info.id, code: info.code, coord: info.coord, label: info.label, asn: info.asn, org: info.org, servers: 0, onlineServers: 0 }
+        cluster = {
+          id: info.id,
+          code: info.code,
+          coord: info.coord,
+          label: info.label,
+          asn: info.asn,
+          org: info.org,
+          nodeNames: [],
+          servers: 0,
+          onlineServers: 0,
+        }
         clustersById.set(info.id, cluster)
       }
       if (!cluster.asn && info.asn)
         cluster.asn = info.asn
       if (!cluster.org && info.org)
         cluster.org = info.org
+      cluster.nodeNames.push(node.name)
       cluster.servers += 1
 
       if (node.online)
@@ -155,7 +167,7 @@ export function useNodeGeoClusters(options: UseNodeGeoClustersOptions = {}) {
   const offlineServers = computed(() => totalServers.value - onlineServers.value)
 
   function clusterKey(cluster: RegionCluster) {
-    return `${cluster.id}:${cluster.coord[0]},${cluster.coord[1]}:${cluster.label}:${cluster.asn ?? ''}:${cluster.org ?? ''}:${cluster.servers}:${cluster.onlineServers}`
+    return `${cluster.id}:${cluster.coord[0]},${cluster.coord[1]}:${cluster.label}:${cluster.asn ?? ''}:${cluster.org ?? ''}:${cluster.nodeNames.join('|')}:${cluster.servers}:${cluster.onlineServers}`
   }
 
   const nodeIpSignature = computed(() => displayNodes.value

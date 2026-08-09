@@ -32,6 +32,9 @@ interface ClusterMarker {
   x: number
   y: number
   statusClass: string
+  servers: number
+  onlineServers: number
+  nodeNames: string[]
 }
 
 const {
@@ -70,10 +73,11 @@ function projectCoord(coord: [number, number]): MapPoint {
   }
 }
 
-function formatClusterMeta(cluster: { code: string, asn?: string, org?: string }): string {
+function formatClusterMeta(cluster: { code: string, servers: number, asn?: string, org?: string }): string {
   const location = cluster.code || 'NODE'
   const provider = cluster.asn || cluster.org
-  return provider ? `${provider} · ${location}` : location
+  const identity = provider ? `${provider} · ${location}` : location
+  return `${identity} · ${cluster.servers} 台`
 }
 
 const clusterMarkers = computed<ClusterMarker[]>(() => regionClusters.value.map((cluster, index) => {
@@ -87,6 +91,9 @@ const clusterMarkers = computed<ClusterMarker[]>(() => regionClusters.value.map(
     x: point.x,
     y: point.y,
     statusClass: cluster.onlineServers > 0 ? 'is-online' : 'is-offline',
+    servers: cluster.servers,
+    onlineServers: cluster.onlineServers,
+    nodeNames: cluster.nodeNames,
   }
 }))
 </script>
@@ -122,6 +129,13 @@ const clusterMarkers = computed<ClusterMarker[]>(() => regionClusters.value.map(
                 preserveAspectRatio="xMidYMid slice"
                 class="map-flag"
               />
+              <text
+                v-if="marker.servers > 1"
+                :x="marker.x + 12"
+                :y="marker.y - 27"
+                class="map-count"
+                :data-earth-cluster-count="marker.servers"
+              >×{{ marker.servers }}</text>
             </template>
           </g>
         </svg>
@@ -143,7 +157,13 @@ const clusterMarkers = computed<ClusterMarker[]>(() => regionClusters.value.map(
           EARTH MAP
           <span v-if="totalServers > 0">{{ onlineRate }}%</span>
         </div>
-        <div v-for="marker in clusterMarkers" :key="marker.id" class="legend-item" :class="marker.statusClass">
+        <div
+          v-for="marker in clusterMarkers"
+          :key="marker.id"
+          class="legend-item"
+          :class="marker.statusClass"
+          :title="`${marker.label || marker.code} · ${marker.servers} 台（在线 ${marker.onlineServers} 台）\n${marker.nodeNames.join('\n')}`"
+        >
           <span class="legend-index">{{ marker.index }}</span>
           <img v-if="marker.code" :src="`/images/flags/${marker.code}.svg`" :alt="marker.code" class="legend-flag">
           <span class="legend-copy">
@@ -247,6 +267,17 @@ const clusterMarkers = computed<ClusterMarker[]>(() => regionClusters.value.map(
   overflow: hidden;
   clip-path: inset(0 round 1.6px);
   filter: drop-shadow(0 3px 5px rgb(15 23 42 / 0.32));
+}
+
+.map-count {
+  fill: white;
+  paint-order: stroke;
+  stroke: rgb(15 23 42 / 0.86);
+  stroke-width: 6px;
+  stroke-linejoin: round;
+  font-size: 16px;
+  font-weight: 800;
+  pointer-events: none;
 }
 
 .legend-panel {

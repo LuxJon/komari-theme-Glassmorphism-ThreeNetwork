@@ -2,6 +2,7 @@
 import type { NodeData } from '@/stores/nodes'
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
+import NodeMultiPingStatus from '@/components/NodeMultiPingStatus.vue'
 import { Badge } from '@/components/ui/badge'
 import { CardX } from '@/components/ui/card-x'
 import { DataTooltip } from '@/components/ui/data-tooltip'
@@ -54,6 +55,7 @@ const NODE_METRIC_ICONS = {
   disk: 'tabler:server-2',
   traffic: 'tabler:arrows-transfer-up-down',
 } as const
+const HEX_COLOR_PATTERN = /^#([0-9a-f]{6})$/i
 
 const isMiniNodeCard = computed(() => appStore.nodeCardSize === 'mini')
 const nodeCardXSize = computed(() => appStore.nodeCardSize === 'large' ? 'large' : 'medium')
@@ -88,6 +90,7 @@ const {
   lossDisplay,
   latencyPanelTooltip,
   lossPanelTooltip,
+  threeNetworkLines,
 } = useNodePingDisplay(() => props.node.uuid, { enabled: () => props.pingEnabled })
 
 const trafficUsedPercentage = computed(() => getTrafficUsedPercentage(props.node))
@@ -174,7 +177,28 @@ const remainingInfoTags = computed<RemainingInfoTag[]>(() => {
   return items
 })
 
-const customTags = computed(() => parseTags(props.node.tags).map(t => t.text))
+const customTags = computed(() => parseTags(props.node.tags))
+
+function hexToRgba(hex: string, alpha: number): string {
+  const match = HEX_COLOR_PATTERN.exec(hex)
+  const normalizedHex = match?.[1]
+  if (!normalizedHex)
+    return `rgba(100, 116, 139, ${alpha})`
+
+  const value = Number.parseInt(normalizedHex, 16)
+  const red = value >> 16
+  const green = (value >> 8) & 0xFF
+  const blue = value & 0xFF
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+function tagBadgeStyle(hex: string) {
+  return {
+    color: hex,
+    backgroundColor: hexToRgba(hex, 0.1),
+    borderColor: hexToRgba(hex, 0.3),
+  }
+}
 
 function getRegionAltText(region: string): string {
   return getRegionDisplayName(region) || getRegionCode(region)
@@ -440,7 +464,14 @@ function hasRegion(region: string | null | undefined): boolean {
         </div>
 
         <!-- 延迟 + 丢包 -->
-        <div class="grid grid-cols-2 gap-1.5">
+        <NodeMultiPingStatus
+          v-if="threeNetworkLines.length === 3 && !isMiniNodeCard"
+          :node-name="props.node.name"
+          :lines="threeNetworkLines"
+          :offline="!props.node.online"
+          @click="emit('pingClick')"
+        />
+        <div v-else class="grid grid-cols-2 gap-1.5">
           <button
             type="button"
             class="group/panel relative flex flex-col rounded-lg bg-slate-500/5"
@@ -503,11 +534,14 @@ function hasRegion(region: string | null | undefined): boolean {
         <!-- 自定义标签 -->
         <div v-if="customTags.length > 0" class="flex flex-wrap gap-1">
           <Badge
-            v-for="(tag, i) in customTags" :key="i"
+            v-for="(tag, i) in customTags" :key="`${tag.text}-${i}`"
             variant="outline"
-            class="!text-[11px] rounded-full text-muted-foreground border-muted-foreground/15 px-2 py-0"
+            :data-node-tag-color="tag.color"
+            :style="tagBadgeStyle(tag.hex)"
+            :title="tag.text"
+            class="!text-[11px] rounded-full px-2 py-0 font-medium"
           >
-            {{ tag }}
+            {{ tag.text }}
           </Badge>
         </div>
 

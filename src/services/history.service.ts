@@ -60,6 +60,10 @@ export function getPingRecordsRequestKey(hours: number, maxCount?: number, uuid?
   return `history:ping:${cachePart(uuid)}:${normalizeHours(hours)}:${cachePart(normalizeMaxCount(maxCount))}`
 }
 
+export function getPingRecordsWithTasksRequestKey(hours: number, maxCount?: number, uuid?: string): string {
+  return `${getPingRecordsRequestKey(hours, maxCount, uuid)}:tasks`
+}
+
 export function abortLoadRecords(uuid: string | undefined, hours: number, maxCount?: number): void {
   requestManager.abort(getLoadRecordsRequestKey(uuid, hours, maxCount))
 }
@@ -70,6 +74,10 @@ export function abortNodeLoadRecords(uuid: string, hours: number, maxCount?: num
 
 export function abortPingRecords(hours: number, maxCount?: number, uuid?: string): void {
   requestManager.abort(getPingRecordsRequestKey(hours, maxCount, uuid))
+}
+
+export function abortPingRecordsWithTasks(hours: number, maxCount?: number, uuid?: string): void {
+  requestManager.abort(getPingRecordsWithTasksRequestKey(hours, maxCount, uuid))
 }
 
 export function normalizeStatusRecord(record: Partial<StatusRecord>): StatusRecord | null {
@@ -169,7 +177,7 @@ export async function loadPingRecordsWithTasks(hours: number, maxCount?: number,
   const safeHours = normalizeHours(hours)
   const safeMaxCount = normalizeMaxCount(maxCount)
   return requestManager.run(
-    `${getPingRecordsRequestKey(safeHours, safeMaxCount, uuid)}:tasks`,
+    getPingRecordsWithTasksRequestKey(safeHours, safeMaxCount, uuid),
     async (signal) => {
       const result = await getSharedRpc().getPingRecords(undefined, safeHours, safeMaxCount, signal, uuid)
       return {

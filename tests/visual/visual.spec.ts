@@ -41,7 +41,33 @@ test('home light desktop', async ({ page }) => {
   await openStablePage(page)
   await expectNodeMetricIcons(page)
   await expectNodePingBars(page)
+  const firstCard = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
+  await expect(firstCard.locator('[data-node-tag-color="purple"]')).toHaveText('500Mbps')
+  await expect(firstCard.locator('[data-node-tag-color="blue"]')).toHaveText('CN2/9929/CMIN2')
   await expect(page).toHaveScreenshot('home-light-desktop.png', { fullPage: false })
+})
+
+test('home card uses the three-network ping format when three tasks are available', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page, {
+    threeNetworkPing: true,
+    threeNetworkTasks: ['上海移动', '上海联通', '上海电信'],
+    hideEarth: true,
+  })
+  await openStablePage(page)
+
+  const panel = page.locator('[data-node-multi-ping]').first()
+  await expect(panel).toBeVisible()
+  await expect(panel.locator('[data-node-multi-ping-task]')).toHaveCount(3)
+  await expect(panel.locator('[data-node-multi-ping-task]').first()).toHaveAttribute('data-node-multi-ping-task', '上海移动')
+  await expect(panel.locator('[data-node-multi-ping-task]').nth(1)).toHaveAttribute('data-node-multi-ping-task', '上海联通')
+  await expect(panel.locator('[data-node-multi-ping-task]').nth(2)).toHaveAttribute('data-node-multi-ping-task', '上海电信')
+  await expect(panel.locator('[data-latency-tone="5"]')).toBeVisible()
+  await expect(panel.locator('[data-latency-tone="3"]')).toBeVisible()
+  await expect(panel.locator('[data-latency-tone="2"]')).toBeVisible()
+  await expect(panel.locator('[data-node-multi-ping-bars="latency"]')).toHaveCount(3)
+  await expect(panel.locator('[data-node-multi-ping-bars="loss"]')).toHaveCount(3)
+  await expect(page).toHaveScreenshot('home-three-network-desktop.png', { fullPage: false })
 })
 
 test('home dark mobile', async ({ page }) => {
@@ -64,7 +90,23 @@ test('home cobe layout desktop', async ({ page }) => {
   await installKomariFixture(page, { earthRenderer: 'cobe' })
   await openStablePage(page)
   await expectNodeMetricIcons(page)
+  await expect(page.locator('[data-earth-region-summary]')).toBeVisible()
+  await expect(page.locator('[data-earth-region-code="US"]')).toContainText('×2')
+  await expect(page.locator('[data-earth-region-code="HK"]')).toContainText('×2')
+  await expect(page.locator('[data-earth-cluster-count="2"]').first()).toBeAttached()
   await expect(page).toHaveScreenshot('home-cobe-desktop.png', { fullPage: false })
+})
+
+test('home globe keeps every region discoverable on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installKomariFixture(page, { earthRenderer: 'cobe' })
+  await openStablePage(page)
+
+  const summary = page.locator('[data-earth-region-summary]')
+  await expect(summary).toBeVisible()
+  await expect(summary.locator('[data-earth-region-code="US"]')).toContainText('×2')
+  await expect(summary.locator('[data-earth-region-code="HK"]')).toContainText('×2')
+  await expect(page.locator('[data-earth-cluster-count="2"]').first()).toBeAttached()
 })
 
 test('home tiled layout desktop', async ({ page }) => {

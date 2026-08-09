@@ -10,6 +10,7 @@ import {
 } from '@vueuse/core'
 import createGlobe from 'cobe'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import NodeEarthRegionSummary from '@/components/NodeEarthRegionSummary.vue'
 import { useNodeGeoClusters } from '@/composables/useNodeGeoClusters'
 import { useAppStore } from '@/stores/app'
 
@@ -153,6 +154,10 @@ function bindLabelRef(id: string) {
 const cobeLabels = computed(() => regionClusters.value.map(cluster => ({
   id: cluster.id,
   code: cluster.code,
+  label: cluster.label,
+  servers: cluster.servers,
+  onlineServers: cluster.onlineServers,
+  nodeNames: cluster.nodeNames,
 })))
 
 const themeColors = computed(() => {
@@ -377,12 +382,20 @@ function onPointerUp(e: PointerEvent) {
       v-for="label in cobeLabels"
       :key="label.id"
       :ref="bindLabelRef(label.id)"
+      :data-earth-cluster-count="label.servers"
+      :aria-label="`${label.label || label.code}，${label.servers} 台服务器，在线 ${label.onlineServers} 台`"
+      :title="`${label.label || label.code} · ${label.servers} 台（在线 ${label.onlineServers} 台）\n${label.nodeNames.join('\n')}`"
+      role="img"
       class="absolute left-0 top-0 z-3 rounded-[0.18rem] transition-[opacity,filter] duration-300"
     >
       <img
         :src="`/images/flags/${label.code}.svg`" :alt="label.code"
         class="block size-5 rounded-[0.18rem] shadow-[0_8px_20px_rgb(15_23_42/0.24)]"
       >
+      <span
+        v-if="label.servers > 1"
+        class="absolute -right-3 -top-2 min-w-5 rounded-full border border-white/70 bg-slate-900/85 px-1 py-0.5 text-center text-[9px] font-bold leading-none text-white shadow-md"
+      >×{{ label.servers }}</span>
     </div>
 
     <div
@@ -398,6 +411,7 @@ function onPointerUp(e: PointerEvent) {
         <span class="text-yellow-600">{{ offlineServers }}</span>
       </div>
     </div>
+    <NodeEarthRegionSummary :clusters="regionClusters" />
   </div>
 </template>
 

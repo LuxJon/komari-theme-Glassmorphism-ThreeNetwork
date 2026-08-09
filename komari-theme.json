@@ -1,10 +1,10 @@
 {
-  "name": "Komari Glassmorphism",
-  "short": "Glassmorphism",
-  "description": "A Glassmorphism theme for Komari",
-  "version": "3.3.3",
+  "name": "Komari Glassmorphism Three-Network",
+  "short": "GlassmorphismThreeNetwork",
+  "description": "A Glassmorphism theme for Komari with three-network latency display",
+  "version": "3.3.8",
   "author": "sanrokamlan",
-  "url": "https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism",
+  "url": "https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork",
   "preview": "preview.png",
   "configuration": {
     "type": "managed",
@@ -72,7 +72,12 @@
       { "key": "lightBackgroundUrl", "name": "亮色模式背景地址", "type": "string", "default": "", "help": "支持 http(s) URL、站内 / 路径；持久本地文件放在 data/theme/user-assets/ 后填写 local:文件名。" },
       { "key": "darkBackgroundUrl", "name": "暗色模式背景地址", "type": "string", "default": "", "help": "支持 http(s) URL、站内 / 路径；持久本地文件放在 data/theme/user-assets/ 后填写 local:文件名。" },
       { "key": "backgroundBlur", "name": "背景模糊半径", "type": "number", "default": 0, "help": "背景的高斯模糊半径（单位：px），0 表示不模糊" },
-      { "key": "backgroundOverlay", "name": "背景遮罩强度", "type": "number", "default": 0, "help": "范围 -100 到 100；0 关闭，正数加深，负数降低透明度。" }
+      { "key": "backgroundOverlay", "name": "背景遮罩强度", "type": "number", "default": 0, "help": "范围 -100 到 100；0 关闭，正数加深，负数降低透明度。" },
+
+      { "name": "09 · 三网延迟", "type": "title" },
+      { "key": "threeNetworkPingTask1", "name": "三网线路 1", "type": "select", "default": "自动选择", "options": "自动选择,上海电信,上海联通,上海移动,浙江电信,浙江联通,浙江移动,广东电信,广东联通,广东移动", "help": "选择第一行显示的 Ping 任务；自动选择时优先匹配电信。" },
+      { "key": "threeNetworkPingTask2", "name": "三网线路 2", "type": "select", "default": "自动选择", "options": "自动选择,上海电信,上海联通,上海移动,浙江电信,浙江联通,浙江移动,广东电信,广东联通,广东移动", "help": "选择第二行显示的 Ping 任务；自动选择时优先匹配联通。" },
+      { "key": "threeNetworkPingTask3", "name": "三网线路 3", "type": "select", "default": "自动选择", "options": "自动选择,上海电信,上海联通,上海移动,浙江电信,浙江联通,浙江移动,广东电信,广东联通,广东移动", "help": "选择第三行显示的 Ping 任务；自动选择时优先匹配移动。三项按这里的顺序显示。" }
     ]
   }
 }

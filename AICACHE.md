@@ -1,5 +1,78 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-09 Cross-device globe information and colored node tags (M4)
+
+- Status: done; packaged as the independent v3.3.8 variant without changing the original `Glassmorphism` identity or installation.
+- Trigger: on the rotating 3D globe, Hong Kong can be on the hidden hemisphere; five US nodes can appear as three flags because nodes at the same city or country fallback coordinate are intentionally clustered. Node tag colors are already parsed from `text<color>` but `NodeCard.vue` currently discards the parsed color and renders every footer badge neutrally.
+- Scope: keep the existing data sources, geographic clustering, globe renderers, layout, and independent `GlassmorphismThreeNetwork` identity. Add an always-visible country/count summary, show per-cluster server counts and accessible details in realistic/Cobe/tiled renderers, and render card tags with their configured colors using browser-portable CSS values.
+- Cross-device target: plain DOM/SVG/CSS presentation with no hover-only dependency, responsive mobile wrapping, and regression checks at desktop and 390px mobile widths for Windows/Android/iOS browser behavior.
+- Non-goals: do not change node geo lookup providers, do not fabricate one coordinate per node, do not expose private IP data, and do not modify the original installed `Glassmorphism` theme.
+- Outcome: each geographic marker now shows `×N` when multiple nodes share a city/fallback coordinate; both 3D renderers also expose an always-visible country/region summary that aggregates all marker clusters (for example, three US locations can still report five US servers). The tiled renderer includes the same counts in its markers and legend metadata.
+- Tag presentation: node-card footer tags now retain `parseTags()` color metadata. Strings such as `500Mbps<purple>;CN2/9929/CMIN2<blue>` render as purple and blue translucent badges using explicit RGB/RGBA values rather than browser-specific color functions.
+- Accessibility/compatibility: country totals and cluster details use visible text plus accessible labels/titles; the core information does not depend on hover. Rendering uses responsive DOM/SVG and plain CSS suitable for current Android Chrome, iOS Safari, and Windows Chromium browsers.
+- Validation: ESLint, Vue TypeScript build, Vite production build, `git diff --check`, and all 12 Chromium Playwright functional/visual cases passed. Visual coverage includes 1280×720 desktop and 390×844 mobile, with assertions that US and Hong Kong remain simultaneously discoverable and colored footer tags retain their configured colors.
+- Package: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.8.zip`, SHA-256 `930E3E09BAC8137CD2D086C4A6D9A5704AF28E34BC47969257FFDA8A00626443`; ZIP root contains only `komari-theme.json`, `preview.png`, and `dist/`.
+
+## 2026-08-08 Native three-network task dropdown fallback (M4/M5)
+
+- Status: done; v3.3.7 is published, imported, and verified through Komari's normal managed-theme route.
+- Trigger: Komari's stock managed-settings renderer treats the custom `pingtask` field as an unknown string field and displays raw `0` task IDs unless the bundled patched admin entry is opened explicitly.
+- Confirmed reference difference: LuminaPlus has no managed configuration manifest; its screenshot comes from a theme-owned `/?view=theme-manage` React page. Reproducing that entire page would duplicate the existing eight Glassmorphism setting groups and exceed the requested scope.
+- Outcome: replaced the three custom `pingtask` fields with Komari-native `select` fields for automatic selection plus Shanghai/Zhejiang/Guangdong Telecom/Unicom/Mobile. Settings save task names and resolve those names against live public Ping-task metadata; legacy positive numeric task IDs remain compatible.
+- Validation: ESLint, Vue TypeScript build, focused three-network regression, all 11 Playwright regressions, Vite production build, ZIP contract inspection, and `git diff --check` passed.
+- Package: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.7.zip`, SHA-256 `9C1FD79BE018091F4C0B6225F718FC3C19EC6BB32C7C0E0816B11A63A249FC37`.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.7`; GitHub marks it Latest and reports the same SHA-256 digest.
+- Live Komari verification: remote import upgraded only `GlassmorphismThreeNetwork` from v3.3.6 to v3.3.7 while original `Glassmorphism` remained v3.3.3. The ordinary `/admin/theme_managed` page shows three `自动选择` dropdown buttons, and the first menu exposes automatic selection plus all nine named tasks without using the special bundled-admin URL.
+
+## 2026-08-08 Configurable three-network Ping refinement (M4/M5)
+
+- Status: done; v3.3.6 is published, imported, and live-verified.
+- Goal: reduce small-number rasterization artifacts in the three-network card, color latency/loss values by the same severity thresholds as LuminaPlus, and let administrators select the three Ping tasks/regions from the managed theme settings page.
+- Confirmed cause: the first three-network implementation rendered 10px values with `font-semibold`; the combination is visibly rough on Windows over a translucent background. This is presentation-only, not a Ping-data sampling option.
+- Confirmed data path: node-card history prefers `public:queryMetrics` plus `public:getPingMetricStats`, falls back to `public:getPingRecords`, and resolves task names from `public:getPublicPingTasks`/returned task metadata. The current task choice is automatic carrier-name matching (Telecom/Unicom/Mobile) with first-three fallback.
+- Reference behavior: LuminaPlus uses latency thresholds `<=60`, `<=100`, `<=160`, `<=200`, `>200` ms and loads the administrator's available tasks from `/api/admin/ping` for its three ordered selectors.
+- Outcome: three ordered `pingtask` selectors were added to the independent variant's managed settings. Its bundled official admin app now loads `/api/admin/ping`, prevents duplicate selections, and stores numeric task IDs; leaving a selector on `自动选择` preserves carrier-name matching and first-unused fallback.
+- Presentation: latency/loss values use 11px medium antialiased tabular figures instead of 10px semibold. Numeric latency follows LuminaPlus's five bands (`<=60`, `<=100`, `<=160`, `<=200`, `>200` ms); loss uses the existing five-band signal palette.
+- Data compatibility: the card prefers Metric Store (`public:queryMetrics` + `public:getPingMetricStats`), uses `public:getPublicPingTasks` for task metadata, and falls back to `public:getPingRecords`. Known selected tasks remain visible with neutral bars when they temporarily have no samples.
+- Admin provenance: rebuilt from `komari-monitor/komari-web@ebfbd3e079f8777a746276fe67429b519024f7c7`; `scripts/sync-komari-admin.ts` applies and restores the small managed-field extension during a reproducible source build.
+- Validation: ESLint, Vue TypeScript build, Vite production build, `git diff --check`, ZIP contract inspection, and all 11 Playwright regressions passed. The focused regression confirms configured task order `[6,5,4]` and latency tones 5/3/2.
+- Package: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.6.zip`, SHA-256 `FF24D6EA12794FE3FA98931DF4126C0ED4244595D169078963AA0AF158DFBD05`.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.6`; GitHub reports the same SHA-256 digest and marks it Latest.
+- Live Komari verification: remote import upgraded only `GlassmorphismThreeNetwork` from v3.3.5 to v3.3.6. The managed page shows `09 · 三网延迟`, three `自动选择` dropdowns, and live choices for Shanghai/Zhejiang/Guangdong Telecom/Unicom/Mobile. The homepage returned Shanghai Telecom `138 ms` at tone 3 and Shanghai Unicom/Mobile `223/241 ms` at tone 5 with the expected computed colors.
+
+## 2026-08-08 Independent three-network theme identity (M4/M6)
+
+- Status: done; the independent variant is published and installed alongside the original theme.
+- Goal: allow the original Glassmorphism theme and this three-network variant to be installed and configured side by side.
+- Identity: change the variant to `name: Komari Glassmorphism Three-Network`, `short: GlassmorphismThreeNetwork`, and version `3.3.5`; keep the upstream author attribution and variant repository URL.
+- Compatibility boundary: only the manifest identity changes. Runtime layout, settings schema, visual behavior, and the existing three-network implementation remain unchanged.
+- Expected result: Komari stores the variant under its own theme directory and settings key instead of replacing the original `short: Glassmorphism` installation.
+- Validation: ESLint, Vue TypeScript build, all 11 Playwright regressions, Vite production build, `git diff --check`, and ZIP contract inspection passed.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.5`; Latest Release asset `komari-theme-Glassmorphism-ThreeNetwork-v3.3.5.zip`, SHA-256 `8573EEC79EA47D79463FE5D154AF798AD686834A561E682FAC3D0EA2E70FB6C0` (local and GitHub digests match).
+- Live Komari verification: repository detection reports the new name/version without the overwrite warning; import succeeds and the original `Komari Glassmorphism v3.3.3` remains current while the new `Komari Glassmorphism Three-Network v3.3.5` appears as a separate selectable theme.
+
+## 2026-08-08 Three-network theme GitHub distribution (M6)
+
+- Status: done; public `v3.3.4` Latest Release published with the importable theme ZIP attached.
+- Goal: publish the validated three-network Glassmorphism build in a public repository that Komari can import from a GitHub URL.
+- Repository: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork`.
+- Release contract: bump the manifest to `3.3.4`, point `url` to the new repository, rebuild the standard ZIP, and attach it to the latest public GitHub Release.
+- Scope boundary: distribution metadata and release packaging only; no additional runtime UI or data-flow changes.
+- Validation: ESLint, Vue TypeScript build, all 11 Playwright regressions, Vite production build, and `git diff --check` passed for the `3.3.4` package.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.4`.
+- Asset: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.4.zip` (7.24 MB), SHA-256 `415A8F2B6431BD69924EA79EDD756B53EA1E888F810F348F6F65C2197DE5074D`; local and GitHub digests match.
+- Import: use the repository URL in Komari's "Import theme" flow; Komari will resolve the Latest Release asset.
+
+## 2026-08-08 Glassmorphism three-network Ping card (M4)
+
+- Status: done.
+- Goal: keep Glassmorphism as the base theme and add only LuminaPlus-style three-line Ping latency/loss presentation to the existing node-card Ping area.
+- Scope: reuse the current per-node Metric Store / legacy Ping request lifecycle, derive three per-task display lines, add a focused Vue presentation component, and add regression coverage.
+- Non-goals: no global layout, background, resource metrics, traffic, pricing, list view, detail page, routing, or release-version changes.
+- Reference: `shanyang242/Komari-Theme-LuminaPlus` is read-only; its React components and global styles are not copied wholesale.
+- Outcome: non-mini node cards render three task rows in carrier order (Telecom, Unicom, Mobile) when three Ping tasks are available; all existing aggregate, mini, list, detail, and popup displays remain on their original paths.
+- Validation: ESLint, Vue TypeScript build, Vite production build, and all 11 Playwright visual/regression tests passed; `git diff --check` passed and the importable theme ZIP was produced without a version bump.
+
 > 这个文件给 AI 编程代理和二开维护者使用，用来保存任务计划、执行日志、验证结果、风险点和交接信息。它的目标是防止断网、会话丢失、上下文被压缩后无法继续工作。
 
 ## 使用规则

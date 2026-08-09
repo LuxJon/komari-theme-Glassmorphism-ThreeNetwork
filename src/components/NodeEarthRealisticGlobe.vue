@@ -8,6 +8,7 @@ import {
   useElementVisibility,
 } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import NodeEarthRegionSummary from '@/components/NodeEarthRegionSummary.vue'
 import { useNodeGeoClusters } from '@/composables/useNodeGeoClusters'
 import { useAppStore } from '@/stores/app'
 
@@ -51,6 +52,10 @@ interface GlobeLabel {
   lat: number
   lng: number
   code: string
+  label: string
+  servers: number
+  onlineServers: number
+  nodeNames: string[]
 }
 
 const {
@@ -75,6 +80,10 @@ const labelsData = computed<GlobeLabel[]>(() => regionClusters.value.map(cluster
   lat: cluster.coord[0],
   lng: cluster.coord[1],
   code: cluster.code,
+  label: cluster.label,
+  servers: cluster.servers,
+  onlineServers: cluster.onlineServers,
+  nodeNames: cluster.nodeNames,
 })))
 
 function earthTextureUrl() {
@@ -93,12 +102,23 @@ function createLabelElement(data: object): HTMLElement {
   const root = document.createElement('div')
   root.className = 'earth-label'
   root.dataset.clusterId = label.id
+  root.dataset.earthClusterCount = String(label.servers)
+  root.setAttribute('role', 'img')
+  root.setAttribute('aria-label', `${label.label || label.code}，${label.servers} 台服务器，在线 ${label.onlineServers} 台`)
+  root.title = `${label.label || label.code} · ${label.servers} 台（在线 ${label.onlineServers} 台）\n${label.nodeNames.join('\n')}`
 
   const flag = document.createElement('img')
   flag.className = 'earth-label-flag'
   flag.src = `/images/flags/${label.code}.svg`
   flag.alt = label.code
   root.appendChild(flag)
+
+  if (label.servers > 1) {
+    const count = document.createElement('span')
+    count.className = 'earth-label-count'
+    count.textContent = `×${label.servers}`
+    root.appendChild(count)
+  }
 
   return root
 }
@@ -323,6 +343,7 @@ watch(shouldRender, (visible) => {
         <span class="text-yellow-600">{{ offlineServers }}</span>
       </div>
     </div>
+    <NodeEarthRegionSummary :clusters="regionClusters" />
   </div>
 </template>
 
@@ -359,5 +380,24 @@ watch(shouldRender, (visible) => {
   display: block;
   border-radius: 0.18rem;
   box-shadow: 0 8px 20px rgb(15 23 42 / 24%);
+}
+
+.earth-globe-host :deep(.earth-label-count) {
+  position: absolute;
+  z-index: 3;
+  top: -0.45rem;
+  right: -0.72rem;
+  min-width: 1.15rem;
+  padding: 0.05rem 0.22rem;
+  border: 1px solid rgb(255 255 255 / 0.72);
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.84);
+  box-shadow: 0 3px 9px rgb(15 23 42 / 0.28);
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
 }
 </style>
