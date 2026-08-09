@@ -2,7 +2,7 @@
 
 ## 2026-08-09 Home region filter row and unobstructed globe (M4)
 
-- Status: validated locally; release v3.3.10 is in progress.
+- Status: done; published as independent variant v3.3.10.
 - Goal: remove the country/count overlay from both 3D globe renderers, remove the visible `全部节点` group trigger, preserve the existing quick controls, and add a separate aligned country/region filter row below them.
 - Reference behavior: follow LuminaPlus's default-all interaction (no country is selected initially; clicking a country filters it; clicking the active country again restores all) and its fixed geographic priority `CN, HK, MO, TW, SG, JP, US`, followed by European countries and then other regions; ties within the latter tiers use node count descending and code ascending.
 - Compatibility target: derive region chips automatically from configured node regions, keep country flags as bundled SVG assets for consistent Windows/Android/iOS rendering, and use a horizontally scrollable no-wrap row so narrow mobile viewports do not overflow the page.
@@ -11,6 +11,8 @@
 - Ordering: matches LuminaPlus exactly: fixed priority `CN, HK, MO, TW, SG, JP, US`, then Europe, then other countries; countries sharing a tier sort by server count descending and ISO code ascending. With HK/US/DE data this produces `HK, US, DE`.
 - Mobile behavior: bundled SVG flags avoid platform emoji differences; the independent region row uses touch horizontal scrolling and no wrapping. Chromium regression at 390×844 confirms the document itself has no horizontal overflow.
 - Validation: ESLint passed, Vue TypeScript build passed, Vite production build passed, `git diff --check` passed, all 13 Chromium regressions passed while updating intended home snapshots, and the final focused four-test run passed the default-all toggle, exact ordering/counts, overlay removal, configured-HK authority, desktop layout, and 390px mobile overflow checks. Playwright's Windows preview-server teardown remained open after reporting all passes and was manually stopped.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.10`, sourced from commit `741ed2e1f07073f6ebc2b1c94d1d6b3b6c41c54d`. GitHub Actions run `31297687974` completed successfully and created `komari-theme-Glassmorphism-build-741ed2e.zip`.
+- Remote package verification: downloaded the GitHub-generated ZIP and confirmed SHA-256 `9F99FDA70F0E7C7A1FD85B960F33F285F20A1042D2FB07C5D4E0C6AD2F13BD9E`, manifest version `3.3.10`, independent short name `GlassmorphismThreeNetwork`, and root entries `komari-theme.json`, `preview.png`, and `dist/`.
 
 ## 2026-08-09 Authoritative node regions and automatic tag palette (M4)
 
