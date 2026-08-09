@@ -2,7 +2,7 @@
 
 ## 2026-08-09 Aligned home filter stack and mobile control order (M4)
 
-- Status: done locally; not yet published.
+- Status: done; published as independent variant v3.3.11.
 - Goal: constrain the quick-filter and country-filter glass panels to the left summary-card column when the desktop header uses a split cards/globe layout, keep both panel edges aligned, and prevent either panel from covering the globe.
 - Mobile target: render the two full-width filter panels first, then the card/list/search controls below; keep the country chips on one touch-scrollable, snap-assisted row so additional countries do not widen the page or compress existing controls.
 - Scope boundary: layout and responsive interaction only; preserve region aggregation, ordering, default-all behavior, group filters, node data flow, globe markers, and card presentation.
@@ -10,6 +10,8 @@
 - Mobile outcome: the DOM and visual order is quick filters, country filters, then card/list/search controls. The country row is a single no-wrap touch-scrolling lane with momentum scrolling and snap assistance; adding more regions does not widen the document.
 - Regression coverage: desktop geometry asserts both panel edges match the summary-card grid within one CSS pixel. The 390px mobile regression asserts panel/tool order, matching panel edges, actual country-row scrollability, and no document-level horizontal overflow.
 - Validation: ESLint, Vue TypeScript build, Vite production build, and `git diff --check` passed. All 13 Chromium visual/behavior regressions passed; Playwright's Windows preview-server teardown remained open after reporting all passes and was manually stopped.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.11`, sourced from commit `9b176c7b358cc0690106d4ca8f8cc1359b2b0497`. GitHub Actions release run `31299951532` and visual-regression run `31299951530` both completed successfully.
+- Remote package verification: downloaded `komari-theme-Glassmorphism-build-9b176c7.zip` and confirmed SHA-256 `F9E1A12158A65829754D83B50A9D048544DEF0D7DA8D9CF319FEF36AAFC4FDB3`, manifest version `3.3.11`, independent short name `GlassmorphismThreeNetwork`, and root entries `komari-theme.json`, `preview.png`, and `dist/`.
 
 ## 2026-08-09 Home region filter row and unobstructed globe (M4)
 
