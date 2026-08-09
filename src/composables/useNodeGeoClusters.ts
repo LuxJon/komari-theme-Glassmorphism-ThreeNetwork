@@ -89,9 +89,26 @@ export function useNodeGeoClusters(options: UseNodeGeoClustersOptions = {}) {
     const countryCode = getCountryCodeFromRegion(node.region)
     const ip = node.ipv4 || node.ipv6
     const geo = ip ? ipGeoMap.value.get(ip) : undefined
+    const geoCountryCode = getCountryCodeFromRegion(geo?.countryCode)
+
+    // The administrator-configured node region is authoritative. Public IP
+    // databases can disagree for routed/anycast addresses and different
+    // browsers may reach different providers. Never move a configured node to
+    // another country because of that external disagreement.
+    if (countryCode && geoCountryCode && geoCountryCode !== countryCode) {
+      const coord = getCoordByCode(countryCode)
+      if (coord) {
+        return {
+          id: countryCode.toLowerCase(),
+          code: countryCode,
+          coord,
+          label: getRegionDisplayName(node.region) || getRegionDisplayName(countryCode) || '',
+        }
+      }
+    }
 
     if (geo && Number.isFinite(geo.lat) && Number.isFinite(geo.lng)) {
-      const code = (geo.countryCode || countryCode || '').toUpperCase()
+      const code = countryCode || geoCountryCode || ''
       const citySlug = (geo.city || `${geo.lat.toFixed(2)},${geo.lng.toFixed(2)}`)
         .toLowerCase()
         .replace(CITY_SLUG_INVALID_REGEX, '-')
@@ -99,7 +116,7 @@ export function useNodeGeoClusters(options: UseNodeGeoClustersOptions = {}) {
       const label = formatCityNameZh(geo.city) || getRegionDisplayName(node.region) || getRegionDisplayName(code) || ''
       return {
         id: `${(code || 'xx').toLowerCase()}-${citySlug || 'city'}`,
-        code: code || (countryCode ?? ''),
+        code,
         coord: [geo.lat, geo.lng],
         label,
         asn: geo.asn,

@@ -44,6 +44,7 @@ test('home light desktop', async ({ page }) => {
   const firstCard = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
   await expect(firstCard.locator('[data-node-tag-color="purple"]')).toHaveText('500Mbps')
   await expect(firstCard.locator('[data-node-tag-color="blue"]')).toHaveText('CN2/9929/CMIN2')
+  await expect(firstCard.locator('[data-node-tag-color="teal"]')).toHaveText('Premium Route')
   await expect(page).toHaveScreenshot('home-light-desktop.png', { fullPage: false })
 })
 
@@ -107,6 +108,19 @@ test('home globe keeps every region discoverable on mobile', async ({ page }) =>
   await expect(summary.locator('[data-earth-region-code="US"]')).toContainText('×2')
   await expect(summary.locator('[data-earth-region-code="HK"]')).toContainText('×2')
   await expect(page.locator('[data-earth-cluster-count="2"]').first()).toBeAttached()
+})
+
+test('configured Hong Kong region wins over a misclassified IP provider', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installKomariFixture(page, {
+    earthRenderer: 'cobe',
+    misclassifiedHongKongGeo: true,
+  })
+  await openStablePage(page)
+
+  const summary = page.locator('[data-earth-region-summary]')
+  await expect(summary.locator('[data-earth-region-code="US"]')).toContainText('×2')
+  await expect(summary.locator('[data-earth-region-code="HK"]')).toContainText('×2')
 })
 
 test('home tiled layout desktop', async ({ page }) => {

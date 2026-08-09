@@ -18,7 +18,9 @@ export interface IpGeo {
 }
 
 const CACHE_PREFIX = 'komari-theme-emerald:ipgeo'
-const CACHE_VERSION = 3
+// v4: invalidate results that may have been accepted before configured node regions
+// became authoritative over third-party country classification.
+const CACHE_VERSION = 4
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 天
 const NEGATIVE_CACHE_TTL_MS = 6 * 60 * 60 * 1000 // 6 小时
 const IP_GEO_TIMEOUT_MS = 5000

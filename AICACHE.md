@@ -1,5 +1,17 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-09 Authoritative node regions and automatic tag palette (M4)
+
+- Status: done; packaged as independent variant v3.3.9.
+- Trigger: iOS Safari reports six US nodes and no Hong Kong node while Android/Windows report the configured five US, one Germany, and one Hong Kong. Clearing Safari site data does not help. Footer tags without explicit `<color>` use the global `TAG_COLORS` order, whose second entry is gray, making every second tag look uncolored.
+- Root cause: `useNodeGeoClusters.ts` currently lets a third-party IP geolocation `countryCode` override the administrator-configured node `region`; providers are rotated per lookup and cached per browser, so one provider can misclassify an HK-routed IP as US only on one browser. The tag fallback starts `ruby, gray`, which also clashes with latency/status colors.
+- Scope: treat a valid configured node region as authoritative, use IP city coordinates only when external and configured countries agree, fall back to configured country coordinates on conflict, and retain the external lookup path for nodes without configured regions. Replace the generic fallback tag order with a dedicated multi-color badge palette beginning purple/blue and continuing through distinct non-status hues; explicit `text<color>` remains authoritative.
+- Regression target: simulate an HK node whose IP provider returns US and assert it remains HK; render three uncolored tags and assert purple/blue/teal-style distinct badge colors, including automatically colored newly added tags.
+- Outcome: a valid administrator-configured node country now wins over third-party IP country data. Matching geolocation still provides city coordinates; conflicting data falls back to the configured country's coordinates, while nodes without a configured region retain the original external lookup behavior. IP geolocation cache version 4 invalidates previously accepted browser-local results.
+- Tag outcome: automatic tag colors now cycle through a dedicated purple, blue, teal, plum, indigo, bronze, cyan, pink, iris, and brown palette. Every semicolon-separated new tag receives a color; explicit `text<color>` continues to override the automatic choice.
+- Validation: ESLint, Vue TypeScript build, Vite production build, `git diff --check`, focused misclassification/tag tests, and all 13 Chromium Playwright regressions passed. The regression explicitly returns Los Angeles/US for an HK node IP and confirms the region summary remains HK.
+- Package: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.9.zip`, SHA-256 `307BEC7129C87AEFC7F7DD17C6332958F6E474EC7F3F697F6D87833832E64380`; verified manifest identity/version and ZIP roots `komari-theme.json`, `preview.png`, and `dist/`.
+
 ## 2026-08-09 Cross-device globe information and colored node tags (M4)
 
 - Status: done; packaged as the independent v3.3.8 variant without changing the original `Glassmorphism` identity or installation.

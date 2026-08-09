@@ -65,6 +65,23 @@ export const TAG_COLORS = [
   'sky',
 ] as const
 
+/**
+ * Automatic node-tag palette. It starts with the Lumina-style purple/blue pair
+ * and avoids the red/orange/green status colors already dominant in node cards.
+ */
+export const DEFAULT_TAG_COLORS = [
+  'purple',
+  'blue',
+  'teal',
+  'plum',
+  'indigo',
+  'bronze',
+  'cyan',
+  'pink',
+  'iris',
+  'brown',
+] as const satisfies readonly TagColor[]
+
 /** Radix Themes 颜色到 HEX 的映射（基于 light 模式的 9 色阶） */
 export const TAG_COLOR_HEX_MAP: Record<TagColor, string> = {
   ruby: '#E5484D',
@@ -318,7 +335,7 @@ export function parseTags(tags: string | undefined): Array<{ text: string, color
 
   return tagList.map((tag, index) => {
     const { text, color } = parseTagWithColor(tag)
-    const defaultColor = TAG_COLORS[index % TAG_COLORS.length] ?? 'blue'
+    const defaultColor = DEFAULT_TAG_COLORS[index % DEFAULT_TAG_COLORS.length] ?? 'purple'
     const resolvedColor = color ?? defaultColor
     return {
       text,

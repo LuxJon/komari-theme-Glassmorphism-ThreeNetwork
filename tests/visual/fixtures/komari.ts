@@ -25,6 +25,7 @@ export interface VisualFixtureOptions {
   hideEarth?: boolean
   threeNetworkPing?: boolean
   threeNetworkTasks?: readonly [number | string, number | string, number | string]
+  misclassifiedHongKongGeo?: boolean
 }
 
 function uuidFor(index: number): string {
@@ -62,7 +63,7 @@ function buildClients(freePriceNode = false) {
       expired_at: index === 6 ? '2026-08-02T00:00:00.000Z' : '2027-07-25T00:00:00.000Z',
       group: index < 6 ? '生产' : '测试,边缘',
       tags: index === 0
-        ? '500Mbps<purple>;CN2/9929/CMIN2<blue>'
+        ? '500Mbps;CN2/9929/CMIN2;Premium Route'
         : index % 2 === 0 ? 'core<jade>;visual<blue>' : 'edge<orange>',
       hidden: false,
       traffic_limit: index === 6 ? 2 * TIB : 20 * TIB,
@@ -370,6 +371,21 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     body: JSON.stringify({ status: 'success', message: 'ok', data: { version: '1.2.6-visual', hash: 'visual' } }),
   }))
   await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options.threeNetworkPing))
+  if (options.misclassifiedHongKongGeo) {
+    const isHongKongNode = (route: Route) => route.request().url().includes('192.0.2.11')
+    await page.route('https://api.ip.sb/geoip/**', route => isHongKongNode(route)
+      ? route.fulfill({ contentType: 'application/json', body: JSON.stringify({ latitude: 34.0522, longitude: -118.2437, city: 'Los Angeles', country_code: 'US' }) })
+      : route.fulfill({ status: 503 }))
+    await page.route('https://ipinfo.io/**/json', route => isHongKongNode(route)
+      ? route.fulfill({ contentType: 'application/json', body: JSON.stringify({ loc: '34.0522,-118.2437', city: 'Los Angeles', country: 'US' }) })
+      : route.fulfill({ status: 503 }))
+    await page.route('https://ipwho.is/**', route => isHongKongNode(route)
+      ? route.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, latitude: 34.0522, longitude: -118.2437, city: 'Los Angeles', country_code: 'US' }) })
+      : route.fulfill({ status: 503 }))
+    await page.route('https://ipapi.co/**/json/', route => isHongKongNode(route)
+      ? route.fulfill({ contentType: 'application/json', body: JSON.stringify({ latitude: 34.0522, longitude: -118.2437, city: 'Los Angeles', country_code: 'US' }) })
+      : route.fulfill({ status: 503 }))
+  }
   await page.route('https://ipwho.is/', route => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ success: true, ip: '2001:db8::25', city: 'Tokyo', region: 'Tokyo', country: 'Japan', connection: { org: 'Example Networks' } }),
