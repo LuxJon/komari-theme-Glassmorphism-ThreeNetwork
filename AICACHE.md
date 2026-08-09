@@ -11,6 +11,7 @@
 - Tag outcome: automatic tag colors now cycle through a dedicated purple, blue, teal, plum, indigo, bronze, cyan, pink, iris, and brown palette. Every semicolon-separated new tag receives a color; explicit `text<color>` continues to override the automatic choice.
 - Validation: ESLint, Vue TypeScript build, Vite production build, `git diff --check`, focused misclassification/tag tests, and all 13 Chromium Playwright regressions passed. The regression explicitly returns Los Angeles/US for an HK node IP and confirms the region summary remains HK.
 - Package: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.9.zip`, SHA-256 `307BEC7129C87AEFC7F7DD17C6332958F6E474EC7F3F697F6D87833832E64380`; verified manifest identity/version and ZIP roots `komari-theme.json`, `preview.png`, and `dist/`.
+- GitHub release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.9`, sourced from commit `4bc5fd330035c0b6a49f7e0dd8cd754e691709da`. GitHub Actions completed successfully and published `komari-theme-Glassmorphism-build-4bc5fd3.zip` with SHA-256 `DB5E49EE62E002B05AA977C659F222053981965E999620B22CEFB2BF9EB67A45`; downloaded verification confirmed the same v3.3.9 manifest identity and importable ZIP layout.
 
 ## 2026-08-09 Cross-device globe information and colored node tags (M4)
 
