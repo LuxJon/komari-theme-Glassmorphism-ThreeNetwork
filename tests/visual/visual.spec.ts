@@ -56,6 +56,20 @@ test('home light desktop', async ({ page }) => {
   )).resolves.toEqual(['HK', 'TW', 'SG', 'JP', 'US', 'DE', 'GB', 'AU'])
   await expect(regionBar.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-home-region-count', '2')
 
+  const desktopAlignment = await page.locator('[data-general-card-grid], [data-home-primary-filters], [data-home-region-bar]').evaluateAll((elements) => {
+    return Object.fromEntries(elements.map((element) => {
+      const rect = element.getBoundingClientRect()
+      const key = element.hasAttribute('data-general-card-grid')
+        ? 'cards'
+        : element.hasAttribute('data-home-primary-filters') ? 'primary' : 'regions'
+      return [key, { left: rect.left, right: rect.right, width: rect.width }]
+    }))
+  }) as Record<string, { left: number, right: number, width: number }>
+  expect(Math.abs(desktopAlignment.primary.left - desktopAlignment.cards.left)).toBeLessThanOrEqual(1)
+  expect(Math.abs(desktopAlignment.primary.right - desktopAlignment.cards.right)).toBeLessThanOrEqual(1)
+  expect(Math.abs(desktopAlignment.regions.left - desktopAlignment.cards.left)).toBeLessThanOrEqual(1)
+  expect(Math.abs(desktopAlignment.regions.right - desktopAlignment.cards.right)).toBeLessThanOrEqual(1)
+
   await regionBar.locator('[data-home-region-code="HK"]').click()
   await expect(page.locator('.node-card')).toHaveCount(2)
   await expect(regionBar.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-active', 'true')
@@ -93,6 +107,40 @@ test('home dark mobile', async ({ page }) => {
   await installKomariFixture(page, { dark: true })
   await openStablePage(page)
   await expectNodeMetricIcons(page)
+
+  const primaryFilters = page.locator('[data-home-primary-filters]')
+  const regionBar = page.locator('[data-home-region-bar]')
+  const viewTools = page.locator('[data-home-view-tools]')
+  const mobileOrder = await page.locator('[data-home-primary-filters], [data-home-region-bar], [data-home-view-tools]').evaluateAll((elements) => {
+    return Object.fromEntries(elements.map((element) => {
+      const rect = element.getBoundingClientRect()
+      const key = element.hasAttribute('data-home-primary-filters')
+        ? 'primary'
+        : element.hasAttribute('data-home-region-bar') ? 'regions' : 'tools'
+      return [key, { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right }]
+    }))
+  }) as Record<string, { top: number, bottom: number, left: number, right: number }>
+  expect(mobileOrder.primary.bottom).toBeLessThanOrEqual(mobileOrder.regions.top)
+  expect(mobileOrder.regions.bottom).toBeLessThanOrEqual(mobileOrder.tools.top)
+  expect(Math.abs(mobileOrder.primary.left - mobileOrder.regions.left)).toBeLessThanOrEqual(1)
+  expect(Math.abs(mobileOrder.primary.right - mobileOrder.regions.right)).toBeLessThanOrEqual(1)
+
+  const initialScrollState = await regionBar.evaluate(element => ({
+    clientWidth: element.clientWidth,
+    scrollLeft: element.scrollLeft,
+    scrollWidth: element.scrollWidth,
+  }))
+  expect(initialScrollState.scrollWidth).toBeGreaterThan(initialScrollState.clientWidth)
+  expect(initialScrollState.scrollLeft).toBe(0)
+  await regionBar.evaluate((element) => {
+    element.scrollLeft = element.scrollWidth
+  })
+  await expect.poll(() => regionBar.evaluate(element => element.scrollLeft)).toBeGreaterThan(0)
+  await regionBar.evaluate((element) => {
+    element.scrollLeft = 0
+  })
+  await expect(primaryFilters).toBeVisible()
+  await expect(viewTools).toBeVisible()
   await expect(page).toHaveScreenshot('home-dark-mobile.png', { fullPage: false })
 })
 

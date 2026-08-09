@@ -824,7 +824,7 @@ onMounted(async () => {
       :class="earthClass"
     />
 
-    <div v-if="visibleCards.length > 0" :class="cardGridClass">
+    <div v-if="visibleCards.length > 0" data-general-card-grid :class="cardGridClass">
       <CardX
         v-for="(card, index) in visibleCards"
         :key="card.key"

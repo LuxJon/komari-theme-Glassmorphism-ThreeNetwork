@@ -1,5 +1,16 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-09 Aligned home filter stack and mobile control order (M4)
+
+- Status: done locally; not yet published.
+- Goal: constrain the quick-filter and country-filter glass panels to the left summary-card column when the desktop header uses a split cards/globe layout, keep both panel edges aligned, and prevent either panel from covering the globe.
+- Mobile target: render the two full-width filter panels first, then the card/list/search controls below; keep the country chips on one touch-scrollable, snap-assisted row so additional countries do not widen the page or compress existing controls.
+- Scope boundary: layout and responsive interaction only; preserve region aggregation, ordering, default-all behavior, group filters, node data flow, globe markers, and card presentation.
+- Outcome: the quick-filter panel and country-filter panel now share the exact left and right edges of the visible summary-card grid in the normal split cards/globe header, so neither background extends into the globe. Header variants without that split keep the controls full-width.
+- Mobile outcome: the DOM and visual order is quick filters, country filters, then card/list/search controls. The country row is a single no-wrap touch-scrolling lane with momentum scrolling and snap assistance; adding more regions does not widen the document.
+- Regression coverage: desktop geometry asserts both panel edges match the summary-card grid within one CSS pixel. The 390px mobile regression asserts panel/tool order, matching panel edges, actual country-row scrollability, and no document-level horizontal overflow.
+- Validation: ESLint, Vue TypeScript build, Vite production build, and `git diff --check` passed. All 13 Chromium visual/behavior regressions passed; Playwright's Windows preview-server teardown remained open after reporting all passes and was manually stopped.
+
 ## 2026-08-09 Home region filter row and unobstructed globe (M4)
 
 - Status: done; published as independent variant v3.3.10.

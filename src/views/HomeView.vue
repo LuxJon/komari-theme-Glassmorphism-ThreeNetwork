@@ -439,6 +439,10 @@ const activeToolTitle = computed(() => {
   return homeTools.value.find(tool => tool.key === activeHomeTool.value)?.description ?? ''
 })
 
+const useSplitHeaderControlWidth = computed(() => {
+  return !appStore.hideGeneralCard && !appStore.hideEarth && appStore.earthRenderer !== 'tiled'
+})
+
 const nodeCardGridClass = computed(() => {
   const sizeClass: Record<typeof appStore.nodeCardSize, string> = {
     mini: 'gap-3 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]',
@@ -473,41 +477,94 @@ const nodeCardGridClass = computed(() => {
     <div class="node-info p-4 pt-0 flex flex-col gap-4 relative z-1 pointer-events-none" :class="!!appStore.hideGeneralCard && 'pt-4'">
       <div class="nodes min-w-0">
         <Tabs v-model="appStore.nodeSelectedGroup" class="w-full flex-col gap-4">
-          <div class="flex flex-col gap-2 xl:flex-row xl:items-center">
-            <div class="home-controls-scroll min-w-0 overflow-x-auto overscroll-x-contain rounded-sm pointer-events-auto touch-pan-x">
-              <div class="flex w-max gap-2">
-                <TabsList v-if="visibleGroups.length" class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md pointer-events-auto">
-                  <TabsTrigger
-                    v-for="g in visibleGroups" :key="g.name" :value="g.name"
-                    class="h-6.5 flex-none shrink-0 text-xs border-none data-[state=active]:text-selection shadow-none rounded-sm"
-                  >
-                    {{ g.tab }}
-                  </TabsTrigger>
-                </TabsList>
+          <div
+            class="flex flex-col gap-2"
+            :class="useSplitHeaderControlWidth ? 'md:flex-row md:items-start' : ''"
+          >
+            <div
+              data-home-filter-stack
+              class="flex w-full min-w-0 flex-none flex-col gap-2"
+              :class="useSplitHeaderControlWidth ? 'md:w-[calc(50%_-_0.25rem)]' : 'md:w-full'"
+            >
+              <div
+                v-if="visibleGroups.length || (showQuickControls && activeHomeTool === 'nodes')"
+                data-home-primary-filters
+                class="home-controls-scroll w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-md bg-background/50 px-1 backdrop-blur-xl pointer-events-auto touch-pan-x"
+              >
+                <div class="flex min-h-10 w-max items-center gap-2">
+                  <TabsList v-if="visibleGroups.length" class="h-8 w-max flex-none rounded-md !bg-transparent p-0 pointer-events-auto">
+                    <TabsTrigger
+                      v-for="g in visibleGroups" :key="g.name" :value="g.name"
+                      class="h-6.5 flex-none shrink-0 text-xs border-none data-[state=active]:text-selection shadow-none rounded-sm"
+                    >
+                      {{ g.tab }}
+                    </TabsTrigger>
+                  </TabsList>
 
-                <div
-                  v-if="showQuickControls && activeHomeTool === 'nodes'"
-                  class="flex h-8 w-max items-center gap-1 rounded-md bg-background/50 px-1 backdrop-blur-xl pointer-events-auto"
-                >
-                  <button
-                    v-for="control in quickControls" :key="control.key"
-                    type="button"
-                    class="inline-flex h-6.5 flex-none shrink-0 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                    :class="activeQuickControl === control.key ? 'bg-background text-selection shadow-sm' : ''"
-                    :aria-pressed="activeQuickControl === control.key"
-                    :aria-label="`切换到${control.label}节点，${quickControlCounts[control.key] ?? 0} 台`"
-                    @click="setQuickControl(control.key)"
+                  <div
+                    v-if="showQuickControls && activeHomeTool === 'nodes'"
+                    class="flex h-8 w-max flex-none items-center gap-1 px-0 pointer-events-auto"
                   >
-                    <Icon :icon="control.icon" :width="12" :height="12" />
-                    <span>{{ control.label }}</span>
-                    <span class="rounded-full bg-slate-500/10 px-1 text-[10px] tabular-nums text-foreground/65">
-                      {{ quickControlCounts[control.key] ?? 0 }}
+                    <button
+                      v-for="control in quickControls" :key="control.key"
+                      type="button"
+                      class="inline-flex h-6.5 flex-none shrink-0 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      :class="activeQuickControl === control.key ? 'bg-background text-selection shadow-sm' : ''"
+                      :aria-pressed="activeQuickControl === control.key"
+                      :aria-label="`切换到${control.label}节点，${quickControlCounts[control.key] ?? 0} 台`"
+                      @click="setQuickControl(control.key)"
+                    >
+                      <Icon :icon="control.icon" :width="12" :height="12" />
+                      <span>{{ control.label }}</span>
+                      <span class="rounded-full bg-slate-500/10 px-1 text-[10px] tabular-nums text-foreground/65">
+                        {{ quickControlCounts[control.key] ?? 0 }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-if="regionOptions.length"
+                data-home-region-bar
+                class="home-controls-scroll home-region-scroll w-full min-w-0 snap-x snap-proximity scroll-smooth overflow-x-auto overscroll-x-contain rounded-md bg-background/50 px-1 backdrop-blur-xl pointer-events-auto touch-pan-x"
+                aria-label="国家或地区筛选；未选择时显示全部节点；可横向滑动查看更多"
+              >
+                <div class="flex min-h-10 w-max items-center gap-1.5" role="group">
+                  <button
+                    v-for="region in regionOptions"
+                    :key="region.code"
+                    type="button"
+                    class="inline-flex h-7 flex-none snap-start items-center gap-2 rounded-sm px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/65 hover:text-foreground"
+                    :class="selectedRegion === region.code ? 'bg-background text-selection shadow-sm' : ''"
+                    :data-home-region-code="region.code"
+                    :data-home-region-count="region.count"
+                    :data-active="selectedRegion === region.code ? 'true' : 'false'"
+                    :aria-pressed="selectedRegion === region.code"
+                    :aria-label="`${region.code} 节点 ${region.count} 台；${selectedRegion === region.code ? '再次点击显示全部节点' : '点击筛选此地区'}`"
+                    :title="`${region.code} · ${region.count} 台`"
+                    @click="setRegion(region.code)"
+                  >
+                    <img
+                      :src="`/images/flags/${region.code}.svg`"
+                      alt=""
+                      class="h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(100_116_139/0.15)]"
+                      decoding="async"
+                    >
+                    <span>{{ region.code }}</span>
+                    <span class="rounded-full bg-slate-500/10 px-1.5 text-[10px] tabular-nums text-foreground/60">
+                      {{ region.count }}
                     </span>
                   </button>
                 </div>
               </div>
             </div>
-            <div class="search flex min-w-0 flex-wrap gap-2 items-center justify-end pointer-events-auto max-sm:justify-start xl:ml-auto">
+
+            <div
+              data-home-view-tools
+              class="search flex min-w-0 flex-wrap gap-2 items-center justify-start pointer-events-auto"
+              :class="useSplitHeaderControlWidth ? 'md:ml-auto md:justify-end' : ''"
+            >
               <div v-if="homeTools.length && appStore.homeAdvancedToolsVisible" class="flex h-8 items-center gap-1 rounded-md bg-background/50 p-0.5 backdrop-blur-xs">
                 <Button
                   v-for="tool in homeTools" :key="tool.key"
@@ -563,40 +620,6 @@ const nodeCardGridClass = computed(() => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-          <div
-            v-if="regionOptions.length"
-            data-home-region-bar
-            class="home-controls-scroll min-w-0 overflow-x-auto overscroll-x-contain rounded-md bg-background/50 px-2 py-1.5 backdrop-blur-xl pointer-events-auto touch-pan-x"
-            aria-label="国家或地区筛选；未选择时显示全部节点"
-          >
-            <div class="flex min-h-7 w-max items-center gap-1.5" role="group">
-              <button
-                v-for="region in regionOptions"
-                :key="region.code"
-                type="button"
-                class="inline-flex h-7 flex-none items-center gap-2 rounded-sm px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/65 hover:text-foreground"
-                :class="selectedRegion === region.code ? 'bg-background text-selection shadow-sm' : ''"
-                :data-home-region-code="region.code"
-                :data-home-region-count="region.count"
-                :data-active="selectedRegion === region.code ? 'true' : 'false'"
-                :aria-pressed="selectedRegion === region.code"
-                :aria-label="`${region.code} 节点 ${region.count} 台；${selectedRegion === region.code ? '再次点击显示全部节点' : '点击筛选此地区'}`"
-                :title="`${region.code} · ${region.count} 台`"
-                @click="setRegion(region.code)"
-              >
-                <img
-                  :src="`/images/flags/${region.code}.svg`"
-                  alt=""
-                  class="h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(100_116_139/0.15)]"
-                  decoding="async"
-                >
-                <span>{{ region.code }}</span>
-                <span class="rounded-full bg-slate-500/10 px-1.5 text-[10px] tabular-nums text-foreground/60">
-                  {{ region.count }}
-                </span>
-              </button>
             </div>
           </div>
           <TabsContent v-for="g in groups" :key="g.name" :value="g.name" class="pointer-events-auto">
@@ -687,6 +710,12 @@ const nodeCardGridClass = computed(() => {
 
 .home-controls-scroll::-webkit-scrollbar {
   display: none;
+}
+
+.home-region-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  scroll-padding-inline: 0.25rem;
 }
 
 .node-card-switch-enter-active,
