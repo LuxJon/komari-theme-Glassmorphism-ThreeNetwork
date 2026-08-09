@@ -1,5 +1,17 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-09 Home region filter row and unobstructed globe (M4)
+
+- Status: validated locally; release v3.3.10 is in progress.
+- Goal: remove the country/count overlay from both 3D globe renderers, remove the visible `全部节点` group trigger, preserve the existing quick controls, and add a separate aligned country/region filter row below them.
+- Reference behavior: follow LuminaPlus's default-all interaction (no country is selected initially; clicking a country filters it; clicking the active country again restores all) and its fixed geographic priority `CN, HK, MO, TW, SG, JP, US`, followed by European countries and then other regions; ties within the latter tiers use node count descending and code ascending.
+- Compatibility target: derive region chips automatically from configured node regions, keep country flags as bundled SVG assets for consistent Windows/Android/iOS rendering, and use a horizontally scrollable no-wrap row so narrow mobile viewports do not overflow the page.
+- Outcome: both 3D globe renderers no longer mount the country/count overlay. The existing online/offline total remains unobtrusive. The visible `全部节点` trigger is removed while custom groups and the existing favorite/traffic/peak/offline/high-load/expiring controls remain on the first row. A full-width country/region row sits directly below it.
+- Filter behavior: the region state starts at `__all__` with no active chip, clicking a country filters cards, overview totals, globe markers, list mode, and advanced tools, and clicking the active country restores all. Region choices and counts are recomputed after the existing group filter, so newly added countries appear automatically.
+- Ordering: matches LuminaPlus exactly: fixed priority `CN, HK, MO, TW, SG, JP, US`, then Europe, then other countries; countries sharing a tier sort by server count descending and ISO code ascending. With HK/US/DE data this produces `HK, US, DE`.
+- Mobile behavior: bundled SVG flags avoid platform emoji differences; the independent region row uses touch horizontal scrolling and no wrapping. Chromium regression at 390×844 confirms the document itself has no horizontal overflow.
+- Validation: ESLint passed, Vue TypeScript build passed, Vite production build passed, `git diff --check` passed, all 13 Chromium regressions passed while updating intended home snapshots, and the final focused four-test run passed the default-all toggle, exact ordering/counts, overlay removal, configured-HK authority, desktop layout, and 390px mobile overflow checks. Playwright's Windows preview-server teardown remained open after reporting all passes and was manually stopped.
+
 ## 2026-08-09 Authoritative node regions and automatic tag palette (M4)
 
 - Status: done; packaged as independent variant v3.3.9.

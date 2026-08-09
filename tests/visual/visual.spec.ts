@@ -45,6 +45,23 @@ test('home light desktop', async ({ page }) => {
   await expect(firstCard.locator('[data-node-tag-color="purple"]')).toHaveText('500Mbps')
   await expect(firstCard.locator('[data-node-tag-color="blue"]')).toHaveText('CN2/9929/CMIN2')
   await expect(firstCard.locator('[data-node-tag-color="teal"]')).toHaveText('Premium Route')
+  await expect(page.getByText('全部节点', { exact: true })).toHaveCount(0)
+
+  const regionBar = page.locator('[data-home-region-bar]')
+  await expect(regionBar).toBeVisible()
+  await expect(regionBar.locator('[data-active="true"]')).toHaveCount(0)
+  await expect(regionBar.locator('[data-home-region-code]')).toHaveCount(8)
+  await expect(regionBar.locator('[data-home-region-code]').evaluateAll(elements =>
+    elements.map(element => element.getAttribute('data-home-region-code')),
+  )).resolves.toEqual(['HK', 'TW', 'SG', 'JP', 'US', 'DE', 'GB', 'AU'])
+  await expect(regionBar.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-home-region-count', '2')
+
+  await regionBar.locator('[data-home-region-code="HK"]').click()
+  await expect(page.locator('.node-card')).toHaveCount(2)
+  await expect(regionBar.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-active', 'true')
+  await regionBar.locator('[data-home-region-code="HK"]').click()
+  await expect(page.locator('.node-card')).toHaveCount(12)
+  await expect(regionBar.locator('[data-active="true"]')).toHaveCount(0)
   await expect(page).toHaveScreenshot('home-light-desktop.png', { fullPage: false })
 })
 
@@ -91,22 +108,24 @@ test('home cobe layout desktop', async ({ page }) => {
   await installKomariFixture(page, { earthRenderer: 'cobe' })
   await openStablePage(page)
   await expectNodeMetricIcons(page)
-  await expect(page.locator('[data-earth-region-summary]')).toBeVisible()
-  await expect(page.locator('[data-earth-region-code="US"]')).toContainText('×2')
-  await expect(page.locator('[data-earth-region-code="HK"]')).toContainText('×2')
+  await expect(page.locator('[data-earth-region-summary]')).toHaveCount(0)
+  await expect(page.locator('[data-home-region-code="US"]')).toHaveAttribute('data-home-region-count', '2')
+  await expect(page.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-home-region-count', '2')
   await expect(page.locator('[data-earth-cluster-count="2"]').first()).toBeAttached()
   await expect(page).toHaveScreenshot('home-cobe-desktop.png', { fullPage: false })
 })
 
-test('home globe keeps every region discoverable on mobile', async ({ page }) => {
+test('home region filter keeps every country discoverable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installKomariFixture(page, { earthRenderer: 'cobe' })
   await openStablePage(page)
 
-  const summary = page.locator('[data-earth-region-summary]')
-  await expect(summary).toBeVisible()
-  await expect(summary.locator('[data-earth-region-code="US"]')).toContainText('×2')
-  await expect(summary.locator('[data-earth-region-code="HK"]')).toContainText('×2')
+  const regionBar = page.locator('[data-home-region-bar]')
+  await expect(regionBar).toBeVisible()
+  await expect(regionBar.locator('[data-home-region-code="US"]')).toHaveAttribute('data-home-region-count', '2')
+  await expect(regionBar.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-home-region-count', '2')
+  await expect(page.locator('[data-earth-region-summary]')).toHaveCount(0)
+  await expect(page.locator('html')).toHaveJSProperty('scrollWidth', await page.locator('html').evaluate(element => element.clientWidth))
   await expect(page.locator('[data-earth-cluster-count="2"]').first()).toBeAttached()
 })
 
@@ -118,9 +137,9 @@ test('configured Hong Kong region wins over a misclassified IP provider', async 
   })
   await openStablePage(page)
 
-  const summary = page.locator('[data-earth-region-summary]')
-  await expect(summary.locator('[data-earth-region-code="US"]')).toContainText('×2')
-  await expect(summary.locator('[data-earth-region-code="HK"]')).toContainText('×2')
+  const regionBar = page.locator('[data-home-region-bar]')
+  await expect(regionBar.locator('[data-home-region-code="US"]')).toHaveAttribute('data-home-region-count', '2')
+  await expect(regionBar.locator('[data-home-region-code="HK"]')).toHaveAttribute('data-home-region-count', '2')
 })
 
 test('home tiled layout desktop', async ({ page }) => {

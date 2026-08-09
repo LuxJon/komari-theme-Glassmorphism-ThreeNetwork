@@ -8,7 +8,6 @@ import {
   useElementVisibility,
 } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import NodeEarthRegionSummary from '@/components/NodeEarthRegionSummary.vue'
 import { useNodeGeoClusters } from '@/composables/useNodeGeoClusters'
 import { useAppStore } from '@/stores/app'
 
@@ -343,7 +342,6 @@ watch(shouldRender, (visible) => {
         <span class="text-yellow-600">{{ offlineServers }}</span>
       </div>
     </div>
-    <NodeEarthRegionSummary :clusters="regionClusters" />
   </div>
 </template>
 

@@ -19,6 +19,11 @@ import { useAppStore } from '@/stores/app'
 import { useNodesStore } from '@/stores/nodes'
 import * as financeHelper from '@/utils/financeHelper'
 import {
+  getHomeNodeRegionCode,
+  getHomeRegionOptions,
+  HOME_ALL_REGION,
+} from '@/utils/homeRegionHelper'
+import {
   getRealtimePeakSpeed,
   getTotalTraffic,
   isExpiringNode,
@@ -84,6 +89,7 @@ const searchText = ref('')
 const debouncedSearchText = ref('')
 const activeHomeTool = ref<HomeToolKey>('nodes')
 const activeQuickControl = ref<HomeQuickControlKey | null>(null)
+const selectedRegion = ref(HOME_ALL_REGION)
 const exchangeRates = ref(financeHelper.DEFAULT_EXCHANGE_RATES)
 const excludeFreeNodes = ref(true)
 const pingDialogNode = ref<NodeData | null>(null)
@@ -133,6 +139,7 @@ const groups = computed(() => [
   { tab: '全部节点', name: 'all' },
   ...nodesStore.groups.map(g => ({ tab: g, name: g })),
 ])
+const visibleGroups = computed(() => groups.value.filter(group => group.name !== 'all'))
 
 const quickControlKeys = computed<HomeQuickControlKey[]>(() => appStore.homeQuickControlOrder.filter(key => key !== 'monthlyCost'))
 const quickControls = computed(() => quickControlKeys.value.map(key => quickControlDefinitions[key]))
@@ -253,8 +260,21 @@ const groupNodeList = computed(() => {
   return nodesStore.visibleNodes.filter(node => node.groups.includes(selectedGroup))
 })
 
+const regionOptions = computed(() => getHomeRegionOptions(groupNodeList.value))
+
+const regionNodeList = computed(() => {
+  if (selectedRegion.value === HOME_ALL_REGION)
+    return groupNodeList.value
+  return groupNodeList.value.filter(node => getHomeNodeRegionCode(node) === selectedRegion.value)
+})
+
+watch(regionOptions, (options) => {
+  if (selectedRegion.value !== HOME_ALL_REGION && !options.some(option => option.code === selectedRegion.value))
+    selectedRegion.value = HOME_ALL_REGION
+})
+
 const nodeList = computed(() => {
-  let filtered = groupNodeList.value
+  let filtered = regionNodeList.value
   if (debouncedSearchText.value.trim()) {
     filtered = filtered.filter(n => isNodeMatchSearch(n, debouncedSearchText.value))
   }
@@ -268,7 +288,7 @@ const deferNodeCards = computed(() => appStore.nodeViewMode === 'card' && nodeLi
 const deferredNodeCardHeight = computed(() => ({ mini: 220, compact: 270, comfortable: 310, large: 350 }[appStore.nodeCardSize]))
 
 const quickControlCounts = computed<Record<HomeQuickControlKey, number>>(() => {
-  let base = groupNodeList.value
+  let base = regionNodeList.value
   if (debouncedSearchText.value.trim())
     base = base.filter(n => isNodeMatchSearch(n, debouncedSearchText.value))
 
@@ -283,6 +303,8 @@ const emptyDescription = computed(() => {
     return '没有匹配的节点'
   if (activeQuickControl.value)
     return '当前快捷筛选下暂无节点'
+  if (selectedRegion.value !== HOME_ALL_REGION)
+    return '当前国家或地区暂无节点'
   return '暂无节点'
 })
 
@@ -292,7 +314,7 @@ function clearSearch() {
 }
 
 const nodeListSortResetKey = computed(() => {
-  return `${appStore.nodeSelectedGroup}|${debouncedSearchText.value.trim()}|${activeQuickControl.value ?? 'all'}`
+  return `${appStore.nodeSelectedGroup}|${selectedRegion.value}|${debouncedSearchText.value.trim()}|${activeQuickControl.value ?? 'all'}`
 })
 
 function handleNodeClick(node: NodeData) {
@@ -304,7 +326,7 @@ function openPingDialog(node: NodeData) {
 }
 
 function getNodeItemTransitionKey(node: NodeData): string {
-  return `${appStore.nodeSelectedGroup}-${activeQuickControl.value ?? 'all'}-${node.uuid}`
+  return `${appStore.nodeSelectedGroup}-${selectedRegion.value}-${activeQuickControl.value ?? 'all'}-${node.uuid}`
 }
 
 function getNodeItemTransitionStyle(index: number): Record<string, string> {
@@ -321,6 +343,17 @@ function setQuickControl(key: HomeQuickControlKey) {
     route: 'home',
     target: activeQuickControl.value ?? 'all',
     detail: { active: Boolean(activeQuickControl.value), result_count: nodeList.value.length },
+  })
+}
+
+function setRegion(code: string) {
+  selectedRegion.value = selectedRegion.value === code ? HOME_ALL_REGION : code
+  void recordVisitorEvent({
+    event: 'filter_change',
+    path: '/',
+    route: 'home',
+    target: selectedRegion.value === HOME_ALL_REGION ? 'region:all' : `region:${selectedRegion.value}`,
+    detail: { active: selectedRegion.value !== HOME_ALL_REGION, result_count: nodeList.value.length },
   })
 }
 
@@ -432,9 +465,9 @@ const nodeCardGridClass = computed(() => {
 
     <NodeGeneralCards
       v-if="!appStore.hideGeneralCard"
-      :nodes="groupNodeList"
-      :globe-nodes="groupNodeList"
-      :transition-key="appStore.nodeSelectedGroup"
+      :nodes="regionNodeList"
+      :globe-nodes="regionNodeList"
+      :transition-key="`${appStore.nodeSelectedGroup}:${selectedRegion}`"
     />
 
     <div class="node-info p-4 pt-0 flex flex-col gap-4 relative z-1 pointer-events-none" :class="!!appStore.hideGeneralCard && 'pt-4'">
@@ -443,9 +476,9 @@ const nodeCardGridClass = computed(() => {
           <div class="flex flex-col gap-2 xl:flex-row xl:items-center">
             <div class="home-controls-scroll min-w-0 overflow-x-auto overscroll-x-contain rounded-sm pointer-events-auto touch-pan-x">
               <div class="flex w-max gap-2">
-                <TabsList class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md pointer-events-auto">
+                <TabsList v-if="visibleGroups.length" class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md pointer-events-auto">
                   <TabsTrigger
-                    v-for="g in groups" :key="g.name" :value="g.name"
+                    v-for="g in visibleGroups" :key="g.name" :value="g.name"
                     class="h-6.5 flex-none shrink-0 text-xs border-none data-[state=active]:text-selection shadow-none rounded-sm"
                   >
                     {{ g.tab }}
@@ -532,15 +565,49 @@ const nodeCardGridClass = computed(() => {
               </div>
             </div>
           </div>
+          <div
+            v-if="regionOptions.length"
+            data-home-region-bar
+            class="home-controls-scroll min-w-0 overflow-x-auto overscroll-x-contain rounded-md bg-background/50 px-2 py-1.5 backdrop-blur-xl pointer-events-auto touch-pan-x"
+            aria-label="国家或地区筛选；未选择时显示全部节点"
+          >
+            <div class="flex min-h-7 w-max items-center gap-1.5" role="group">
+              <button
+                v-for="region in regionOptions"
+                :key="region.code"
+                type="button"
+                class="inline-flex h-7 flex-none items-center gap-2 rounded-sm px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/65 hover:text-foreground"
+                :class="selectedRegion === region.code ? 'bg-background text-selection shadow-sm' : ''"
+                :data-home-region-code="region.code"
+                :data-home-region-count="region.count"
+                :data-active="selectedRegion === region.code ? 'true' : 'false'"
+                :aria-pressed="selectedRegion === region.code"
+                :aria-label="`${region.code} 节点 ${region.count} 台；${selectedRegion === region.code ? '再次点击显示全部节点' : '点击筛选此地区'}`"
+                :title="`${region.code} · ${region.count} 台`"
+                @click="setRegion(region.code)"
+              >
+                <img
+                  :src="`/images/flags/${region.code}.svg`"
+                  alt=""
+                  class="h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(100_116_139/0.15)]"
+                  decoding="async"
+                >
+                <span>{{ region.code }}</span>
+                <span class="rounded-full bg-slate-500/10 px-1.5 text-[10px] tabular-nums text-foreground/60">
+                  {{ region.count }}
+                </span>
+              </button>
+            </div>
+          </div>
           <TabsContent v-for="g in groups" :key="g.name" :value="g.name" class="pointer-events-auto">
             <div v-if="activeHomeTool !== 'nodes'" class="mb-4 rounded-lg bg-background/50 px-3 py-2 text-sm text-muted-foreground">
               {{ activeToolTitle }} · 当前分组：{{ g.tab }}（{{ groupNodeList.length }} 台）
             </div>
-            <NodeTopologyPanel v-if="activeHomeTool === 'topology'" :nodes="groupNodeList" />
-            <NodeComparePanel v-else-if="activeHomeTool === 'nodeCompare'" :nodes="groupNodeList" />
-            <ProviderValuePanel v-else-if="activeHomeTool === 'providerValue'" :nodes="groupNodeList" />
-            <HealthSummaryPanel v-else-if="activeHomeTool === 'healthSummary'" :nodes="groupNodeList" />
-            <SnapshotExportPanel v-else-if="activeHomeTool === 'snapshotExport'" :nodes="groupNodeList" />
+            <NodeTopologyPanel v-if="activeHomeTool === 'topology'" :nodes="regionNodeList" />
+            <NodeComparePanel v-else-if="activeHomeTool === 'nodeCompare'" :nodes="regionNodeList" />
+            <ProviderValuePanel v-else-if="activeHomeTool === 'providerValue'" :nodes="regionNodeList" />
+            <HealthSummaryPanel v-else-if="activeHomeTool === 'healthSummary'" :nodes="regionNodeList" />
+            <SnapshotExportPanel v-else-if="activeHomeTool === 'snapshotExport'" :nodes="regionNodeList" />
             <AuditLogPanel v-else-if="activeHomeTool === 'auditLog'" />
             <TransitionGroup
               v-else-if="nodeList.length !== 0 && appStore.nodeViewMode === 'card'"
