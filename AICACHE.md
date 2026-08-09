@@ -12,6 +12,8 @@
 - Accessibility/compatibility: country totals and cluster details use visible text plus accessible labels/titles; the core information does not depend on hover. Rendering uses responsive DOM/SVG and plain CSS suitable for current Android Chrome, iOS Safari, and Windows Chromium browsers.
 - Validation: ESLint, Vue TypeScript build, Vite production build, `git diff --check`, and all 12 Chromium Playwright functional/visual cases passed. Visual coverage includes 1280×720 desktop and 390×844 mobile, with assertions that US and Hong Kong remain simultaneously discoverable and colored footer tags retain their configured colors.
 - Package: `komari-theme-Glassmorphism-ThreeNetwork-v3.3.8.zip`, SHA-256 `930E3E09BAC8137CD2D086C4A6D9A5704AF28E34BC47969257FFDA8A00626443`; ZIP root contains only `komari-theme.json`, `preview.png`, and `dist/`.
+- GitHub source: pushed the complete independent variant to `sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork` `main`; release source commit `6b5b0c0e56295a61899df097ae7a1560a680fbbb` preserves the repository's original placeholder commit history.
+- Release: `https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases/tag/v3.3.8`; GitHub Actions completed successfully and marks it Latest. The remotely rebuilt asset is `komari-theme-Glassmorphism-build-6b5b0c0.zip`, SHA-256 `7FD1CBA1B8A1B04CCA7ACDADE30DC9D03E3B0ED707277FE4DD09B8D4B0410A32`; downloaded verification confirmed version `3.3.8`, short name `GlassmorphismThreeNetwork`, and ZIP roots `komari-theme.json`, `preview.png`, `dist/`.
 
 ## 2026-08-08 Native three-network task dropdown fallback (M4/M5)
 
