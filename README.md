@@ -2,11 +2,11 @@
 
 基于 Glassmorphism 扩展的 Komari 三网延迟主题，可与原版主题同时安装。
 
-[![Version](https://img.shields.io/badge/version-v3.3.12-7c3aed.svg)](https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases)
+[![Version](https://img.shields.io/badge/version-v3.3.12-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> 本仓库不是 GitHub 平台标记的 Fork，但代码直接基于 Komari Glassmorphism 开发，并参考了 LuminaPlus 的三网延迟与地区筛选交互。这里仅说明本分支新增或调整的内容；原主题的完整能力请查看下方致谢中的原仓库。
+> 代码直接基于 Komari Glassmorphism 开发，并参考了 LuminaPlus 的三网延迟与地区筛选交互。这里仅说明本分支新增或调整的内容；原主题的完整能力请查看下方致谢中的原仓库。
 
 ## 预览
 
@@ -57,10 +57,10 @@
 在 Komari 主题管理中使用仓库地址：
 
 ```text
-https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork
+https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork
 ```
 
-也可以从 [Releases](https://github.com/sly7jone-hue/komari-theme-Glassmorphism-ThreeNetwork/releases) 下载最新 ZIP 后手动导入。
+也可以从 [Releases](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases) 下载最新 ZIP 后手动导入。
 
 由于本主题使用独立标识 `GlassmorphismThreeNetwork`，安装或升级时不会覆盖原版 `Glassmorphism`。
 
