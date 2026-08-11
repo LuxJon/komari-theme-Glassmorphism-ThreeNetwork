@@ -26,13 +26,16 @@ export interface VisualFixtureOptions {
   threeNetworkPing?: boolean
   threeNetworkTasks?: readonly [number | string, number | string, number | string]
   misclassifiedHongKongGeo?: boolean
+  expiryThresholds?: boolean
+  missingCpuMetricHistory?: boolean
+  pingTaskOrdering?: boolean
 }
 
 function uuidFor(index: number): string {
   return `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`
 }
 
-function buildClients(freePriceNode = false) {
+function buildClients(freePriceNode = false, expiryThresholds = false) {
   return Object.fromEntries(Array.from({ length: 12 }, (_, index) => {
     const fixture = REGION_FIXTURES[index % REGION_FIXTURES.length]
     const uuid = uuidFor(index)
@@ -60,7 +63,11 @@ function buildClients(freePriceNode = false) {
       billing_cycle: 365,
       auto_renewal: index % 2 === 0,
       currency: 'USD',
-      expired_at: index === 6 ? '2026-08-02T00:00:00.000Z' : '2027-07-25T00:00:00.000Z',
+      expired_at: expiryThresholds && index === 0
+        ? '2026-07-30T12:00:00.000Z'
+        : expiryThresholds && index === 1
+          ? '2026-08-04T12:00:00.000Z'
+          : index === 6 ? '2026-08-02T00:00:00.000Z' : '2027-07-25T00:00:00.000Z',
       group: index < 6 ? '生产' : '测试,边缘',
       tags: index === 0
         ? '500Mbps;CN2/9929/CMIN2;Premium Route'
@@ -196,20 +203,35 @@ function metricValue(key: string, index: number): number {
   return values[key] ?? 0
 }
 
-function buildMetricResponse(payload: Record<string, unknown>) {
+function buildMetricResponse(
+  payload: Record<string, unknown>,
+  options: VisualFixtureOptions,
+  pingTasks: Array<{ id: number, name: string }>,
+) {
   const requested = Array.isArray(payload.metric_keys) ? payload.metric_keys.map(String) : METRIC_KEYS
   const uuid = typeof payload.entity_id === 'string' ? payload.entity_id : uuidFor(0)
   const points = Array.from({ length: 48 }, (_, index) => ({
     time: new Date(Date.parse(FIXED_NOW) - (47 - index) * 75_000).toISOString(),
     index,
   }))
-  const series = requested.map(key => ({
-    metric_key: key,
-    entity_id: uuid,
-    type: 'gauge',
-    tags: key.startsWith('ping.') ? { task_id: '1', task_name: 'Tokyo' } : {},
-    points: points.map(point => ({ time: point.time, value: metricValue(key, point.index) })),
-  }))
+  const metricPingTasks = options.pingTaskOrdering
+    ? [pingTasks[2]!, pingTasks[0]!, pingTasks[1]!]
+    : pingTasks
+  const series = requested
+    .filter(key => !options.missingCpuMetricHistory || key !== 'cpu.usage')
+    .flatMap((key) => {
+      const taskList = key.startsWith('ping.') ? metricPingTasks : [null]
+      return taskList.map(task => ({
+        metric_key: key,
+        entity_id: uuid,
+        type: 'gauge',
+        tags: task ? { task_id: String(task.id), task_name: task.name } : {},
+        points: points.map(point => ({
+          time: point.time,
+          value: metricValue(key, point.index) + (task?.id ?? 0),
+        })),
+      }))
+    })
   return { start: points[0].time, end: points.at(-1)?.time, series, count: series.length }
 }
 
@@ -217,24 +239,37 @@ function jsonRpcResult(id: unknown, result: unknown) {
   return { jsonrpc: '2.0', id, result }
 }
 
-async function handleRpc(route: Route, clientFixtures = clients, threeNetworkPing = false): Promise<void> {
+async function handleRpc(route: Route, clientFixtures = clients, options: VisualFixtureOptions = {}): Promise<void> {
   const payload = route.request().postDataJSON() as { id: unknown, method: string, params?: Record<string, unknown> }
   const uuid = typeof payload.params?.uuid === 'string' ? payload.params.uuid : uuidFor(0)
-  const pingTasks = threeNetworkPing
+  const pingTasks = options.pingTaskOrdering
     ? [
-        { id: 1, name: '浙江电信', interval: 60, loss: 4.8, weight: 1 },
-        { id: 2, name: '浙江联通', interval: 60, loss: 2.2, weight: 2 },
-        { id: 3, name: '浙江移动', interval: 60, loss: 1.1, weight: 3 },
-        { id: 4, name: '上海电信', interval: 60, loss: 0.8, weight: 4 },
-        { id: 5, name: '上海联通', interval: 60, loss: 3.4, weight: 5 },
-        { id: 6, name: '上海移动', interval: 60, loss: 9.8, weight: 6 },
+        { id: 30, name: '浙江移动', interval: 60, loss: 0, weight: 0 },
+        { id: 10, name: '浙江联通', interval: 60, loss: 0, weight: 1 },
+        { id: 20, name: '浙江电信', interval: 60, loss: 0, weight: 2 },
       ]
-    : [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+    : options.threeNetworkPing
+      ? [
+          { id: 1, name: '浙江电信', interval: 60, loss: 4.8, weight: 1 },
+          { id: 2, name: '浙江联通', interval: 60, loss: 2.2, weight: 2 },
+          { id: 3, name: '浙江移动', interval: 60, loss: 1.1, weight: 3 },
+          { id: 4, name: '上海电信', interval: 60, loss: 0.8, weight: 4 },
+          { id: 5, name: '上海联通', interval: 60, loss: 3.4, weight: 5 },
+          { id: 6, name: '上海移动', interval: 60, loss: 9.8, weight: 6 },
+        ]
+      : [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+  const metricPingTasks = options.pingTaskOrdering
+    ? [pingTasks[2]!, pingTasks[0]!, pingTasks[1]!]
+    : pingTasks
   const pingRecords = pingTasks.flatMap((task, taskIndex) => Array.from({ length: 48 }, (_, index) => ({
     task_id: task.id,
     client: uuid,
     time: new Date(Date.parse(FIXED_NOW) - (47 - index) * 75_000).toISOString(),
-    value: index % (17 + taskIndex) === 0 ? -1 : [76, 114, 152, 30, 100, 200][taskIndex]! + index,
+    value: index % (options.threeNetworkPing ? 17 + taskIndex : 17) === 0
+      ? -1
+      : options.threeNetworkPing
+        ? [76, 114, 152, 30, 100, 200][taskIndex]! + index
+        : 76 + index + task.id,
   })))
   let result: unknown
 
@@ -272,10 +307,32 @@ async function handleRpc(route: Route, clientFixtures = clients, threeNetworkPin
       result = METRIC_KEYS.map(name => ({ name, description: name, type: 'gauge', retention_days: 30 }))
       break
     case 'public:queryMetrics':
-      result = buildMetricResponse(payload.params ?? {})
+      result = buildMetricResponse(payload.params ?? {}, options, pingTasks)
       break
     case 'public:getPingMetricStats':
-      result = { start: FIXED_NOW, end: FIXED_NOW, interval_seconds: 60, stats: [], count: 0 }
+      result = options.pingTaskOrdering
+        ? {
+            start: FIXED_NOW,
+            end: FIXED_NOW,
+            interval_seconds: 60,
+            stats: metricPingTasks.map(task => ({
+              entity_id: uuid,
+              task_id: String(task.id),
+              name: task.name,
+              interval: task.interval,
+              tags: { task_id: String(task.id), task_name: task.name },
+              total: 48,
+              valid: 48,
+              loss: 0,
+              loss_approximate: false,
+              min: 40 + task.id,
+              max: 120 + task.id,
+              avg: 80 + task.id,
+              latest: 90 + task.id,
+            })),
+            count: metricPingTasks.length,
+          }
+        : { start: FIXED_NOW, end: FIXED_NOW, interval_seconds: 60, stats: [], count: 0 }
       break
     case 'public:getNodesInformation':
       result = Object.values(clientFixtures)
@@ -299,7 +356,9 @@ async function handleRpc(route: Route, clientFixtures = clients, threeNetworkPin
 }
 
 export async function installKomariFixture(page: Page, options: VisualFixtureOptions = {}): Promise<void> {
-  const clientFixtures = options.freePriceNode ? buildClients(true) : clients
+  const clientFixtures = options.freePriceNode || options.expiryThresholds
+    ? buildClients(options.freePriceNode, options.expiryThresholds)
+    : clients
   const settings = {
     themeMode: options.dark ? 'dark' : 'light',
     dataUpdateInterval: 60,
@@ -370,7 +429,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     contentType: 'application/json',
     body: JSON.stringify({ status: 'success', message: 'ok', data: { version: '1.2.6-visual', hash: 'visual' } }),
   }))
-  await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options.threeNetworkPing))
+  await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options))
   if (options.misclassifiedHongKongGeo) {
     const isHongKongNode = (route: Route) => route.request().url().includes('192.0.2.11')
     await page.route('https://api.ip.sb/geoip/**', route => isHongKongNode(route)
