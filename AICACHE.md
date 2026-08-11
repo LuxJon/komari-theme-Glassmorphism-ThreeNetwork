@@ -1,8 +1,17 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-11 v3.3.12 release validation and publication (M4/M6)
+
+- Status: release candidate validated on branch `agent/readme-attribution`; publication is authorized through PR #1.
+- Scope: publish the upstream v3.3.4/v3.3.5 compatibility fixes while preserving the independent Three-Network feature set, and replace the inherited long README with a concise variant-only description and explicit source-theme acknowledgements.
+- Validation: ESLint passed without changing tracked files; Vue TypeScript build passed; Vite production build passed; all 16 Edge/Chromium visual and behavior regressions passed.
+- Package: `komari-theme-Glassmorphism-build-504ca2f.zip` contains 772 entries with only `komari-theme.json`, `preview.png`, and `dist/` at the root; manifest version is `3.3.12`; local SHA-256 is `275DC9543CE5387748176FB2BF7D32DF0360A24489643688DB451803BAB5428B`.
+- Warning: the existing `globe` chunk remains above Vite's 600 kB warning threshold; no new build warning or runtime regression was found.
+- Publication path: update PR #1 with this validation record, require its visual-regression check to pass, merge into `main`, then verify both main-branch workflows and the downloadable GitHub Release asset.
+
 ## 2026-08-11 Concise derivative README and upstream acknowledgements (M6)
 
-- Status: done locally; README is reduced from the inherited long-form document to a concise variant-focused page.
+- Status: done; README is reduced from the inherited long-form document to a concise variant-focused page and included in the v3.3.12 release candidate.
 - Goal: replace the inherited long-form upstream feature history with a concise README that documents only the independent Three-Network variant's differences, installation, license, and acknowledgements.
 - Repository relationship: GitHub public metadata reports `fork: false`, so the publish repository is standalone at the platform level; its Git history and code are nevertheless directly derived from `sanrokamlan-prog/komari-theme-Glassmorphism`, with Three-Network and region-filter interaction references from `shanyang242/Komari-Theme-LuminaPlus`.
 - Attribution boundary: explicitly thank both source themes and Komari Monitor, preserve MIT/license language, and avoid implying that upstream capabilities were authored by this variant.
@@ -17,7 +26,7 @@
 - Validation: the shell had no Bun executable, so the same installed ESLint, `vue-tsc`, Vite, and Playwright entry points were run directly with the bundled Node runtime. ESLint passed; Vue TypeScript build passed; Vite production build passed; `git diff --check` passed; all 16 visual/behavior tests passed under system Edge's Chromium engine.
 - Package: `komari-theme-Glassmorphism-build-a1e934d.zip` contains 772 entries and only the required roots `komari-theme.json`, `preview.png`, and `dist/`; its manifest is `Komari Glassmorphism Three-Network`, short name `GlassmorphismThreeNetwork`, version `3.3.12`, and the independent repository URL. The filename retains the pre-commit short SHA by design.
 - Warning: production build retains the existing `globe` chunk-size warning; no new build warning was introduced.
-- Release boundary: conclude the local merge only; do not push or publish unless separately requested.
+- Release boundary: publication was separately authorized on 2026-08-11 and proceeds through PR #1 after complete local and CI validation.
 
 ## 2026-08-09 Aligned home filter stack and mobile control order (M4)
 
