@@ -1,5 +1,13 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-11 Concise derivative README and upstream acknowledgements (M6)
+
+- Status: done locally; README is reduced from the inherited long-form document to a concise variant-focused page.
+- Goal: replace the inherited long-form upstream feature history with a concise README that documents only the independent Three-Network variant's differences, installation, license, and acknowledgements.
+- Repository relationship: GitHub public metadata reports `fork: false`, so the publish repository is standalone at the platform level; its Git history and code are nevertheless directly derived from `sanrokamlan-prog/komari-theme-Glassmorphism`, with Three-Network and region-filter interaction references from `shanyang242/Komari-Theme-LuminaPlus`.
+- Attribution boundary: explicitly thank both source themes and Komari Monitor, preserve MIT/license language, and avoid implying that upstream capabilities were authored by this variant.
+- Validation: focused ESLint/Markdown autofix completed without errors and `git diff --check` passed. Runtime build was skipped because the change is documentation-only.
+
 ## 2026-08-11 Sync upstream v3.3.4-v3.3.5 fixes into Three-Network variant (M4/M6)
 
 - Status: done locally; official commits `e212925` and `e9a7238` are integrated, conflicts are resolved, and the v3.3.12 result is validated.
