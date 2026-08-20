@@ -1,5 +1,15 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-20 Node-card CPU core presentation (M4/M6)
+
+- Status: v3.3.14 release candidate complete locally on `agent/cpu-core-display`; publication is now authorized and in progress.
+- Finding: the three values under CPU were Komari's 1/5/15-minute system load averages (`load`, `load5`, `load15`) rounded to two decimals, not a CPU-percentage calculation. Very lightly loaded nodes therefore legitimately rendered `0.00, 0.00, 0.00`, but placing those values inside the CPU tile was ambiguous.
+- Upstream comparison: current Glassmorphism `bf83765` still renders the load triplet below CPU; current LuminaPlus `151b8d3` renders `cpu_cores` as `N 核` below CPU and keeps load as a separate metric.
+- Scope: change only the normal node-card CPU subtitle to `cpu_cores` in LuminaPlus style; preserve CPU percentage, memory, disk, traffic, three-network Ping, list view, detail charts, comparison data, and every existing data path.
+- Regression: added a deterministic card assertion that the fixture's core count is visible and the former load triplet is absent from the CPU tile; refreshed the five affected home-card visual baselines.
+- Validation: focused ESLint passed; Vue TypeScript build passed; Vite production build passed; the focused core-count regression passed; all 17 Edge/Chromium visual and behavior tests passed after the baseline refresh; `git diff --check` passed.
+- Build: the release version is advanced to v3.3.14 so Komari can discover this runtime UI change. The archive must retain the required `komari-theme.json`, `preview.png`, and `dist/` roots. The existing globe chunk-size warning is unchanged.
+
 ## 2026-08-11 v3.3.12 release validation and publication (M4/M6)
 
 - Status: release candidate validated on branch `agent/readme-attribution`; publication is authorized through PR #1.
