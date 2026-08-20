@@ -1,8 +1,16 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-20 Upstream v3.3.6/v3.3.7 compatibility update (M4/M6)
+
+- Status: local release candidate complete on `agent/upstream-v3.3.7`; publication of v3.3.15 is authorized and next.
+- Scope: port the upstream tiled-map summary-card fix and cumulative traffic history aggregation fix without changing three-network Ping, region filtering, CPU core presentation, realtime metrics, quota accounting, or the independent theme identity.
+- Implementation: all earth layouts now consume `appStore.generalCardOrder`; cumulative `net.total.up` / `net.total.down` history requests use per-metric `last` aggregation while ordinary metrics retain `avg`.
+- Regression: added deterministic assertions for custom tiled-card count/order and emitted cumulative-traffic RPC aggregation parameters; retained all Three-Network-specific and prior upstream regressions.
+- Validation: ESLint passed; Vue TypeScript build passed; Vite production build passed; Playwright passed 19/19 including all existing screenshots. `git diff --check` passed. The v3.3.15 local archive has 772 entries, exact roots `dist`, `komari-theme.json`, `preview.png`, preserves `GlassmorphismThreeNetwork` and the LuxJon repository URL, and has SHA-256 `c217393f95beccd4ef5500cce0748782556e5a674dfd38b90e7f0f7875883f66`. Only the established globe chunk-size warning remains.
+
 ## 2026-08-20 Node-card CPU core presentation (M4/M6)
 
-- Status: v3.3.14 release candidate complete locally on `agent/cpu-core-display`; publication is now authorized and in progress.
+- Status: published as v3.3.14 through PR #4; Release and main-branch visual regression succeeded for merge commit `3ec7bfcbf373e62df411969751c650f3c5afde05`.
 - Finding: the three values under CPU were Komari's 1/5/15-minute system load averages (`load`, `load5`, `load15`) rounded to two decimals, not a CPU-percentage calculation. Very lightly loaded nodes therefore legitimately rendered `0.00, 0.00, 0.00`, but placing those values inside the CPU tile was ambiguous.
 - Upstream comparison: current Glassmorphism `bf83765` still renders the load triplet below CPU; current LuminaPlus `151b8d3` renders `cpu_cores` as `N 核` below CPU and keeps load as a separate metric.
 - Scope: change only the normal node-card CPU subtitle to `cpu_cores` in LuminaPlus style; preserve CPU percentage, memory, disk, traffic, three-network Ping, list view, detail charts, comparison data, and every existing data path.

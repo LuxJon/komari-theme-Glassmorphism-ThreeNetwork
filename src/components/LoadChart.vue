@@ -558,6 +558,10 @@ async function loadMetricHistoryRecords(params: Pick<MetricQueryParams, 'hours' 
     fill_empty: true,
     max_points: METRIC_HISTORY_MAX_POINTS,
     aggregation: 'avg',
+    aggregation_by_metric: {
+      'net.total.up': 'last',
+      'net.total.down': 'last',
+    },
   })
 
   const series = normalizeMetricSeriesList(result.series)

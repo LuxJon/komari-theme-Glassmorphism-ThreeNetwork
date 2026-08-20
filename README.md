@@ -2,7 +2,7 @@
 
 基于 Glassmorphism 扩展的 Komari 三网延迟主题，可与原版主题同时安装。
 
-[![Version](https://img.shields.io/badge/version-v3.3.14-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
+[![Version](https://img.shields.io/badge/version-v3.3.15-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -16,7 +16,7 @@
 
 | 项目     | 说明                                         |
 | :------- | :------------------------------------------- |
-| 当前版本 | **v3.3.14**                                  |
+| 当前版本 | **v3.3.15**                                  |
 | 主题标识 | `GlassmorphismThreeNetwork`                  |
 | 安装方式 | Komari 可导入 ZIP 主题                       |
 | 上游基础 | Komari Glassmorphism                         |
@@ -24,6 +24,13 @@
 | 共存能力 | 使用独立主题标识，不覆盖原版 `Glassmorphism` |
 
 ## 本分支改动
+
+### v3.3.15 上游兼容更新
+
+- 同步 Glassmorphism v3.3.6：平铺地图不再强制固定六张总览卡片，统一遵循主题设置中的卡片方案、数量与顺序。
+- 同步 Glassmorphism v3.3.7：详情历史的累计上传、下载流量按时间桶最后值显示，避免平均降采样导致累计值偏低。
+- 普通历史指标仍使用平均值聚合；实时流量、流量配额、Agent 上报、后端记账及现有三网延迟均保持原有逻辑。
+- 新增对应的浏览器回归检查，并同步 Code Quality 工作流，在 PR 与 `main` 推送时自动执行 lint 和 build。
 
 ### 三网延迟
 
@@ -51,6 +58,8 @@
 - 同步 Glassmorphism v3.3.4：剩余 5 天内标红、6–10 天标黄，无效到期日期显示 `-`。
 - 同步 Glassmorphism v3.3.4：短时历史缺少 CPU 指标时自动回退兼容记录接口。
 - 同步 Glassmorphism v3.3.5：Ping 卡片、图例和指标线保持后台任务顺序。
+- 同步 Glassmorphism v3.3.6：平铺地图遵循自定义总览卡片方案与顺序。
+- 同步 Glassmorphism v3.3.7：累计上传、下载历史保留累计计数器语义。
 
 ## 安装与升级
 

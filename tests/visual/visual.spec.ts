@@ -198,6 +198,20 @@ test('home tiled layout desktop', async ({ page }) => {
   await expect(page).toHaveScreenshot('home-tiled-desktop.png', { fullPage: false })
 })
 
+test('home tiled layout respects custom general cards and order', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page, {
+    earthRenderer: 'tiled',
+    generalCardKeys: ['currentTime', 'offlineNodes'],
+  })
+  await openStablePage(page)
+
+  const cards = page.locator('[data-general-card-key]')
+  await expect(cards).toHaveCount(2)
+  await expect(cards.first()).toHaveAttribute('data-general-card-key', 'currentTime')
+  await expect(cards.nth(1)).toHaveAttribute('data-general-card-key', 'offlineNodes')
+})
+
 test('home mini card metric icons remain accessible', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installKomariFixture(page, { nodeCardSize: 'mini', hideEarth: true })
@@ -293,6 +307,35 @@ test('detail short history falls back when metric history omits CPU', async ({ p
     await loadRange.getByRole('tab', { name: view, exact: true }).click()
     await expect(cpuValue).toHaveText(/^\d+\.\d$/)
   }
+})
+
+test('detail history keeps cumulative traffic counters on their last value', async ({ page }) => {
+  const historyCalls: Array<Record<string, unknown>> = []
+
+  page.on('request', (request) => {
+    if (!request.url().endsWith('/api/rpc2'))
+      return
+
+    const payload = request.postDataJSON() as { method?: string, params?: Record<string, unknown> } | null
+    const metricKeys = Array.isArray(payload?.params?.metric_keys) ? payload.params.metric_keys : []
+    if (payload?.method === 'public:queryMetrics' && metricKeys.includes('net.total.up'))
+      historyCalls.push(payload.params ?? {})
+  })
+
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page)
+  await openStablePage(page, '/instance/00000000-0000-4000-8000-000000000001')
+
+  await page.locator('[data-load-chart-range]').getByRole('tab', { name: '1 天', exact: true }).click()
+  await expect.poll(() => historyCalls.length).toBeGreaterThan(0)
+
+  expect(historyCalls.at(-1)).toMatchObject({
+    aggregation: 'avg',
+    aggregation_by_metric: {
+      'net.total.up': 'last',
+      'net.total.down': 'last',
+    },
+  })
 })
 
 test('detail ping requests stay scoped to the current node', async ({ page }) => {
