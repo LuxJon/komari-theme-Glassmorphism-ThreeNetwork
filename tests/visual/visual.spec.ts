@@ -211,6 +211,16 @@ test('home mini card metric icons remain accessible', async ({ page }) => {
   await expect(card.getByRole('img', { name: '内存' })).toBeVisible()
 })
 
+test('home card identifies CPU capacity by core count', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page, { hideEarth: true })
+  await openStablePage(page)
+
+  const card = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
+  await expect(card.getByText('1 核', { exact: true })).toBeVisible()
+  await expect(card).not.toContainText('0.18, 0.14, 0.10')
+})
+
 test('node card expiry uses red through 5 days and yellow through 10 days', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await installKomariFixture(page, { expiryThresholds: true, hideEarth: true })
