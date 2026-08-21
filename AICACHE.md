@@ -1,8 +1,17 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-21 Node-card CPU core and load summary (M4/M6)
+
+- Status: local release candidate complete on `agent/cpu-core-load`; publication of v3.3.16 is authorized and next.
+- Scope: reuse the existing normal-card CPU subtitle line for `N 核 · 负载 X.XX`; keep mini cards and every other card layout unchanged.
+- Semantics: the visible load is the one-minute system load average; a focusable/touchable tooltip provides 1/5/15-minute values. Missing/non-finite load values render as `-`. The percentage label and green progress bar remain bound only to realtime `node.cpu`.
+- Regression: asserts the visible summary, focus/touch-safe complete tooltip, click isolation from card navigation, realtime CPU label, and unchanged CPU progress width. Refreshed and inspected the five affected home-card baselines; mini/list/detail baselines remain unchanged.
+- Validation: ESLint passed; Vue TypeScript build passed; Vite production build passed; all 19 Chromium behavior/visual regressions reported `ok` against the refreshed baselines. The known Windows preview-server teardown required interrupting the idle process after all 19 results were printed; no test failed. `git diff --check` passed.
+- Package: the local v3.3.16 archive has 772 entries and exact roots `dist`, `komari-theme.json`, `preview.png`; it preserves `GlassmorphismThreeNetwork` and the LuxJon repository URL. Local SHA-256 is `6e70d39b750cc6d86ae4196836605b1c59d3cbd95d34170f88f12a7911bc8d51`. Only the established globe chunk-size warning remains.
+
 ## 2026-08-20 Upstream v3.3.6/v3.3.7 compatibility update (M4/M6)
 
-- Status: local release candidate complete on `agent/upstream-v3.3.7`; publication of v3.3.15 is authorized and next.
+- Status: published as v3.3.15 through PR #5; Release, Code Quality, and main-branch visual regression succeeded for merge commit `142a7339adce2933b81989dd7f42568a885a5cae`.
 - Scope: port the upstream tiled-map summary-card fix and cumulative traffic history aggregation fix without changing three-network Ping, region filtering, CPU core presentation, realtime metrics, quota accounting, or the independent theme identity.
 - Implementation: all earth layouts now consume `appStore.generalCardOrder`; cumulative `net.total.up` / `net.total.down` history requests use per-metric `last` aggregation while ordinary metrics retain `avg`.
 - Regression: added deterministic assertions for custom tiled-card count/order and emitted cumulative-traffic RPC aggregation parameters; retained all Three-Network-specific and prior upstream regressions.
