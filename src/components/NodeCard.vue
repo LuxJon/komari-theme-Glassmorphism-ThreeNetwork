@@ -82,7 +82,9 @@ const formatLoadAverage = (value: number | undefined): string => Number.isFinite
 const cpuLoadSummary = computed(() => `${cpuCoreCount.value} 核 · 负载 ${formatLoadAverage(props.node.load)}`)
 const cpuLoadTooltip = computed(() => [
   `CPU 核心数：${cpuCoreCount.value} 核`,
-  `系统负载：1 分钟 ${formatLoadAverage(props.node.load)} · 5 分钟 ${formatLoadAverage(props.node.load5)} · 15 分钟 ${formatLoadAverage(props.node.load15)}`,
+  `1 分钟负载：${formatLoadAverage(props.node.load)}`,
+  `5 分钟负载：${formatLoadAverage(props.node.load5)}`,
+  `15 分钟负载：${formatLoadAverage(props.node.load15)}`,
 ].join('\n'))
 const memPercentage = computed(() => getMemoryPercentage(props.node))
 const memStatus = computed(() => getStatus(memPercentage.value))
@@ -375,7 +377,7 @@ function hasRegion(region: string | null | undefined): boolean {
               :content="cpuLoadTooltip"
               placement="top"
               class="block text-[11px] text-muted-foreground"
-              content-class="w-max max-w-72 whitespace-pre-line leading-snug text-left"
+              content-class="left-0 translate-x-0 w-36 whitespace-pre-line leading-snug text-left"
               @click.stop
               @keydown.stop
             >
