@@ -1,5 +1,15 @@
 # AI Cache / Agent Handoff Log
 
+## 2026-08-21 CPU load tooltip containment fix (M4/M6)
+
+- Status: v3.3.17 local release candidate is complete on `agent/cpu-tooltip-layout`; publication is authorized and next.
+- Root cause: `.node-card` intentionally uses `overflow: hidden`, while the CPU tooltip was centered over a trigger in the card's left metric column and used a long second line. Its left half and overflowing text were therefore clipped at the card boundary.
+- Fix scope: keep the card and shared tooltip primitive unchanged; align this tooltip to the trigger's left edge, constrain it to 9rem, and split core count plus 1/5/15-minute load values into four lines.
+- Regression: focuses the tooltip, asserts all four rows, and verifies its left, right, and top bounds stay inside the node card.
+- Validation: ESLint, Vue TypeScript build, Vite production build, and `git diff --check` passed. All 19 Chromium behavior/visual tests reported `ok`; the known Windows preview-server teardown was interrupted only after all results printed. Existing screenshots remain unchanged because the tooltip is hidden in baseline captures. Only the established globe chunk-size warning remains.
+- Release scope: advanced the sole manifest version to v3.3.17 and added the concise README note; no unrelated runtime or layout change is included.
+- Package: final local build re-passed ESLint, Vue TypeScript, and Vite. `komari-theme-Glassmorphism-build-00d58a9.zip` has 772 entries and exact roots `dist`, `komari-theme.json`, `preview.png`; its manifest is v3.3.17 with `GlassmorphismThreeNetwork` and the LuxJon repository URL. Local SHA-256 is `cf61dee78f04598ed49f9fd0ae9d419b6b8171ec3ea07fc81744cc7854ecb95e`.
+
 ## 2026-08-21 Node-card CPU core and load summary (M4/M6)
 
 - Status: local release candidate complete on `agent/cpu-core-load`; publication of v3.3.16 is authorized and next.
