@@ -2,7 +2,7 @@
 
 基于 Glassmorphism 扩展的 Komari 三网延迟主题，可与原版主题同时安装。
 
-[![Version](https://img.shields.io/badge/version-v3.3.15-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
+[![Version](https://img.shields.io/badge/version-v3.3.16-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -16,7 +16,7 @@
 
 | 项目     | 说明                                         |
 | :------- | :------------------------------------------- |
-| 当前版本 | **v3.3.15**                                  |
+| 当前版本 | **v3.3.16**                                  |
 | 主题标识 | `GlassmorphismThreeNetwork`                  |
 | 安装方式 | Komari 可导入 ZIP 主题                       |
 | 上游基础 | Komari Glassmorphism                         |
@@ -24,6 +24,13 @@
 | 共存能力 | 使用独立主题标识，不覆盖原版 `Glassmorphism` |
 
 ## 本分支改动
+
+### v3.3.16 CPU 核心数与负载摘要
+
+- 普通节点卡片的 CPU 副标题同时显示核心数与最近 1 分钟系统负载，例如 `4 核 · 负载 0.06`。
+- 悬停、键盘聚焦或触摸副标题可查看完整的 1 / 5 / 15 分钟负载；缺失值安全显示为 `-`。
+- CPU 百分比和绿色进度条继续表示实时 CPU 使用率，不改为负载比例，也不增加卡片高度。
+- mini 卡片、三网延迟、内存、硬盘、流量及其他现有布局保持不变。
 
 ### v3.3.15 上游兼容更新
 

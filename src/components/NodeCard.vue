@@ -74,6 +74,16 @@ const formatBytesPerSecond = (bytes: number) => formatBytesPerSecondWithConfig(b
 const offlineTime = computed(() => formatDateTime(props.node.time))
 
 const cpuStatus = computed(() => getStatus(props.node.cpu ?? 0))
+const cpuCoreCount = computed(() => {
+  const cores = Number(props.node.cpu_cores)
+  return Number.isFinite(cores) ? Math.max(0, Math.trunc(cores)) : 0
+})
+const formatLoadAverage = (value: number | undefined): string => Number.isFinite(value) ? Number(value).toFixed(2) : '-'
+const cpuLoadSummary = computed(() => `${cpuCoreCount.value} 核 · 负载 ${formatLoadAverage(props.node.load)}`)
+const cpuLoadTooltip = computed(() => [
+  `CPU 核心数：${cpuCoreCount.value} 核`,
+  `系统负载：1 分钟 ${formatLoadAverage(props.node.load)} · 5 分钟 ${formatLoadAverage(props.node.load5)} · 15 分钟 ${formatLoadAverage(props.node.load15)}`,
+].join('\n'))
 const memPercentage = computed(() => getMemoryPercentage(props.node))
 const memStatus = computed(() => getStatus(memPercentage.value))
 const swapTooltip = computed(() => {
@@ -357,10 +367,20 @@ function hasRegion(region: string | null | undefined): boolean {
               </span>
               <span class="tabular-nums font-medium">{{ (props.node.cpu ?? 0).toFixed(1) }}%</span>
             </div>
-            <ProgressThin :percentage="props.node.cpu ?? 0" :status="cpuStatus" :height="4" />
-            <div class="text-[11px] text-muted-foreground truncate">
-              {{ props.node.cpu_cores || 0 }} 核
-            </div>
+            <ProgressThin data-node-cpu-progress :percentage="props.node.cpu ?? 0" :status="cpuStatus" :height="4" />
+            <DataTooltip
+              data-node-cpu-tooltip
+              as="span"
+              tabindex="0"
+              :content="cpuLoadTooltip"
+              placement="top"
+              class="block text-[11px] text-muted-foreground"
+              content-class="w-max max-w-72 whitespace-pre-line leading-snug text-left"
+              @click.stop
+              @keydown.stop
+            >
+              <span data-node-cpu-summary class="block truncate">{{ cpuLoadSummary }}</span>
+            </DataTooltip>
           </div>
 
           <!-- 内存 -->

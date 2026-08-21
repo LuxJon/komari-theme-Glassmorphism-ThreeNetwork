@@ -225,13 +225,22 @@ test('home mini card metric icons remain accessible', async ({ page }) => {
   await expect(card.getByRole('img', { name: '内存' })).toBeVisible()
 })
 
-test('home card identifies CPU capacity by core count', async ({ page }) => {
+test('home card combines CPU core count and load without changing CPU progress semantics', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await installKomariFixture(page, { hideEarth: true })
   await openStablePage(page)
 
   const card = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
-  await expect(card.getByText('1 核', { exact: true })).toBeVisible()
+  const cpuInfo = card.locator('[data-node-cpu-tooltip]')
+  const summary = card.locator('[data-node-cpu-summary]')
+  await expect(summary).toHaveText('1 核 · 负载 0.18')
+  await cpuInfo.focus()
+  await expect(cpuInfo.getByRole('tooltip')).toBeVisible()
+  await expect(cpuInfo.getByRole('tooltip')).toHaveText('CPU 核心数：1 核\n系统负载：1 分钟 0.18 · 5 分钟 0.14 · 15 分钟 0.10')
+  await cpuInfo.click()
+  await expect(page).toHaveURL('/')
+  await expect(card.getByText('8.0%', { exact: true })).toBeVisible()
+  await expect(card.locator('[data-node-cpu-progress] > div')).toHaveAttribute('style', /width: 8%;/)
   await expect(card).not.toContainText('0.18, 0.14, 0.10')
 })
 
