@@ -2,7 +2,7 @@
 
 基于 Glassmorphism 扩展的 Komari 三网延迟主题，可与原版主题同时安装。
 
-[![Version](https://img.shields.io/badge/version-v3.3.18-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
+[![Version](https://img.shields.io/badge/version-v3.3.19-7c3aed.svg)](https://github.com/LuxJon/komari-theme-Glassmorphism-ThreeNetwork/releases)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -16,7 +16,7 @@
 
 | 项目     | 说明                                         |
 | :------- | :------------------------------------------- |
-| 当前版本 | **v3.3.18**                                  |
+| 当前版本 | **v3.3.19**                                  |
 | 主题标识 | `GlassmorphismThreeNetwork`                  |
 | 安装方式 | Komari 可导入 ZIP 主题                       |
 | 上游基础 | Komari Glassmorphism                         |
@@ -24,6 +24,10 @@
 | 共存能力 | 使用独立主题标识，不覆盖原版 `Glassmorphism` |
 
 ## 本分支改动
+
+### v3.3.19 旧缓存入口兼容
+
+- 保留 v3.3.17 首页缓存引用的脚本文件名，并让它加载当前构建，避免主题升级后旧缓存导致首页空白。
 
 ### v3.3.18 后台入口修复
 
