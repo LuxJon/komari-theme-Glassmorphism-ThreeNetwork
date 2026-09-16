@@ -79,7 +79,8 @@ function handleButtonClick(action: string) {
         path: router.currentRoute.value.path,
         route: String(router.currentRoute.value.name ?? ''),
       })
-      location.href = '/admin'
+      // This site's current Komari backend is mounted at /jonah.
+      location.href = '/jonah'
       break
   }
 }
