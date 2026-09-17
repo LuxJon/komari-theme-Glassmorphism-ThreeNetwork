@@ -22,6 +22,7 @@ interface ThemeManifest {
 
 const themeJsonPath = resolve(__dirname, 'komari-theme.json')
 const devApiTarget = process.env.VITE_API_TARGET || 'http://127.0.0.1:25774'
+const themeEntryPattern = /<script\s[^>]*src="\/assets\/(index-[^"]+\.js)"/
 
 function readThemeManifest(): ThemeManifest {
   if (!existsSync(themeJsonPath))
@@ -74,6 +75,17 @@ function komariThemeZip(): Plugin {
         console.log('[komari-theme-zip] dist directory not found, skipping zip creation')
         return
       }
+
+      // A previous root Service Worker can keep serving v3.3.17's index.html.
+      // Keep its entry URL working while loading the current build's code.
+      const currentEntry = fs.readFileSync(resolve(distDir, 'index.html'), 'utf-8')
+        .match(themeEntryPattern)?.[1]
+      if (!currentEntry)
+        throw new Error('Built theme entry script not found in dist/index.html')
+
+      const staleEntry = 'index-CQJjIMJD.js'
+      if (staleEntry !== currentEntry)
+        fs.copyFileSync(resolve(distDir, 'assets', currentEntry), resolve(distDir, 'assets', staleEntry))
 
       const output = fs.createWriteStream(outputPath)
       const archive = archiver('zip', { zlib: { level: 9 } })
