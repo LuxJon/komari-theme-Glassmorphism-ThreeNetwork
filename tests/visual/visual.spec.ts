@@ -35,6 +35,52 @@ async function expectNodePingBars(page: Page): Promise<void> {
   }
 }
 
+test('Lite native task selections use actual Zhejiang task IDs', async ({ page }) => {
+  await installKomariFixture(page, {
+    pingTaskOrdering: true,
+    threeNetworkTasks: [[10], [30, 20], '[20]'],
+    hideEarth: true,
+  })
+  await openStablePage(page)
+  const lines = page.locator('[data-node-multi-ping]').first().locator('[data-node-multi-ping-task]')
+  await expect(lines).toHaveCount(3)
+  await expect(lines.nth(0)).toHaveAttribute('data-node-multi-ping-task', '浙江联通')
+  await expect(lines.nth(1)).toHaveAttribute('data-node-multi-ping-task', '浙江移动')
+  await expect(lines.nth(2)).toHaveAttribute('data-node-multi-ping-task', '浙江电信')
+})
+
+test('Lite empty or removed selections fall back to available tasks', async ({ page }) => {
+  await installKomariFixture(page, {
+    pingTaskOrdering: true,
+    threeNetworkTasks: [[], [999], '上海移动'],
+    hideEarth: true,
+  })
+  await openStablePage(page)
+  const lines = page.locator('[data-node-multi-ping]').first().locator('[data-node-multi-ping-task]')
+  await expect(lines).toHaveCount(3)
+  await expect(lines.nth(0)).toHaveAttribute('data-node-multi-ping-task', '浙江电信')
+  await expect(lines.nth(1)).toHaveAttribute('data-node-multi-ping-task', '浙江联通')
+  await expect(lines.nth(2)).toHaveAttribute('data-node-multi-ping-task', '浙江移动')
+})
+
+test('admin button requests the native backend without a theme admin bridge', async ({ page }) => {
+  await installKomariFixture(page)
+  const legacyRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/admin-app/'))
+      legacyRequests.push(request.url())
+  })
+  await page.route('**/admin', route => route.fulfill({
+    contentType: 'text/html',
+    body: '<h1>Native Lite admin</h1>',
+  }))
+  await openStablePage(page)
+  await page.getByRole('button', { name: '后台管理', exact: true }).click()
+  await expect(page).toHaveURL(/\/admin$/)
+  await expect(page.getByRole('heading', { name: 'Native Lite admin' })).toBeVisible()
+  expect(legacyRequests).toEqual([])
+})
+
 test('home light desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await installKomariFixture(page)

@@ -792,7 +792,20 @@ function readNumberSetting(settings: ThemeSettings, key: string, fallback: numbe
 type PingTaskSelection = number | string | null
 
 function readOptionalPingTaskSelection(settings: ThemeSettings, key: string): PingTaskSelection {
-  const value = settings[key]
+  let value: unknown = settings[key]
+  // Lite's native selector returns an ID array; older themes saved a name or ID.
+  if (typeof value === 'string' && value.trim().startsWith('[')) {
+    try {
+      value = JSON.parse(value)
+    }
+    catch {
+      return null
+    }
+  }
+  if (Array.isArray(value)) {
+    return value.map(item => typeof item === 'number' || typeof item === 'string' ? Number(item) : Number.NaN)
+      .find(id => Number.isSafeInteger(id) && id > 0) ?? null
+  }
   const numericValue = typeof value === 'number'
     ? value
     : typeof value === 'string' && value.trim()
