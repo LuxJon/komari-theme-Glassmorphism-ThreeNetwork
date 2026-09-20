@@ -24,7 +24,7 @@ export interface VisualFixtureOptions {
   freePriceNode?: boolean
   hideEarth?: boolean
   threeNetworkPing?: boolean
-  threeNetworkTasks?: readonly [number | string, number | string, number | string]
+  threeNetworkTasks?: readonly [number | string | number[], number | string | number[], number | string | number[]]
   misclassifiedHongKongGeo?: boolean
   expiryThresholds?: boolean
   missingCpuMetricHistory?: boolean
